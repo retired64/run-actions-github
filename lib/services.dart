@@ -5,27 +5,108 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOGGER — solo en debug, nunca expone tokens (punto 9)
+// LOGGER — solo en debug, nunca expone tokens
 // ─────────────────────────────────────────────────────────────────────────────
 
 abstract final class Log {
   static void d(String tag, String msg) {
     if (kDebugMode) debugPrint('[$tag] $msg');
   }
+
   static void e(String tag, String msg, [Object? err]) {
     if (kDebugMode) debugPrint('[$tag] ❌ $msg${err != null ? ' → $err' : ''}');
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MODELOS
+// MODELOS MULTI-CUENTA
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Una cuenta de GitHub (owner + token). Un usuario puede tener varias.
+class GithubAccount {
+  final String id;       // UUID local
+  final String owner;
+  final String token;
+  final String label;    // alias amigable, p.ej. "retired64 personal"
+
+  const GithubAccount({
+    required this.id,
+    required this.owner,
+    required this.token,
+    required this.label,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'owner': owner,
+        'label': label,
+        // token NO va en JSON en texto; se guarda aparte en secure storage
+      };
+
+  factory GithubAccount.fromJson(Map<String, dynamic> j) => GithubAccount(
+        id: j['id'] as String,
+        owner: j['owner'] as String,
+        token: '',             // se hidrata desde secure storage
+        label: j['label'] as String,
+      );
+
+  GithubAccount copyWith({String? token, String? label, String? owner}) =>
+      GithubAccount(
+        id: id,
+        owner: owner ?? this.owner,
+        token: token ?? this.token,
+        label: label ?? this.label,
+      );
+}
+
+/// Un repositorio vinculado a una cuenta.
+class GithubRepo {
+  final String id;            // UUID local
+  final String accountId;     // FK → GithubAccount.id
+  final String repo;          // nombre del repo en GitHub
+  final String branch;
+  final String label;         // alias amigable
+
+  const GithubRepo({
+    required this.id,
+    required this.accountId,
+    required this.repo,
+    required this.branch,
+    required this.label,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'accountId': accountId,
+        'repo': repo,
+        'branch': branch,
+        'label': label,
+      };
+
+  factory GithubRepo.fromJson(Map<String, dynamic> j) => GithubRepo(
+        id: j['id'] as String,
+        accountId: j['accountId'] as String,
+        repo: j['repo'] as String,
+        branch: (j['branch'] as String?) ?? 'main',
+        label: j['label'] as String,
+      );
+
+  GithubRepo copyWith({String? repo, String? branch, String? label}) =>
+      GithubRepo(
+        id: id,
+        accountId: accountId,
+        repo: repo ?? this.repo,
+        branch: branch ?? this.branch,
+        label: label ?? this.label,
+      );
+}
+
+/// Credenciales resueltas para hacer llamadas a la API.
 class GithubCredentials {
   final String owner;
   final String repo;
   final String token;
-  final String branch; // punto 5
+  final String branch;
 
   const GithubCredentials({
     required this.owner,
@@ -35,14 +116,17 @@ class GithubCredentials {
   });
 }
 
-// Punto 6 — estructura para inputs de workflow_dispatch
+// ─────────────────────────────────────────────────────────────────────────────
+// MODELOS DE WORKFLOW
+// ─────────────────────────────────────────────────────────────────────────────
+
 class WorkflowInput {
   final String key;
   final String description;
-  final String type;           // string | boolean | choice | environment
+  final String type;
   final bool required;
   final String? defaultValue;
-  final List<String>? options; // solo para type=choice
+  final List<String>? options;
 
   const WorkflowInput({
     required this.key,
@@ -60,7 +144,8 @@ class WorkflowInput {
         type: j['type'] as String? ?? 'string',
         required: j['required'] as bool? ?? false,
         defaultValue: j['default']?.toString(),
-        options: (j['options'] as List?)?.map((e) => e.toString()).toList(),
+        options:
+            (j['options'] as List?)?.map((e) => e.toString()).toList(),
       );
 }
 
@@ -69,7 +154,7 @@ class Workflow {
   final String name;
   final String state;
   final String path;
-  final List<WorkflowInput> inputs; // punto 6
+  final List<WorkflowInput> inputs;
 
   const Workflow({
     required this.id,
@@ -93,7 +178,8 @@ class Workflow {
     final raw = j['inputs'] as Map<String, dynamic>?;
     if (raw == null) return [];
     return raw.entries
-        .map((e) => WorkflowInput.fromEntry(e.key, e.value as Map<String, dynamic>))
+        .map((e) =>
+            WorkflowInput.fromEntry(e.key, e.value as Map<String, dynamic>))
         .toList();
   }
 }
@@ -129,9 +215,17 @@ class WorkflowRun {
             : null,
       );
 
-  bool get isRunning => status == 'queued' || status == 'in_progress';
+  bool get isRunning =>
+      status == 'queued' || status == 'in_progress' || status == 'waiting';
 
-  String get duration {
+  /// FIX #7 — duración live si está corriendo, fija si terminó
+  String duration({DateTime? now}) {
+    final ref = now ?? DateTime.now();
+    if (isRunning) {
+      final d = ref.difference(createdAt);
+      if (d.inMinutes > 0) return '${d.inMinutes}m ${d.inSeconds % 60}s';
+      return '${d.inSeconds}s';
+    }
     if (updatedAt == null) return '—';
     final d = updatedAt!.difference(createdAt);
     if (d.inMinutes > 0) return '${d.inMinutes}m ${d.inSeconds % 60}s';
@@ -143,19 +237,28 @@ class WorkflowRun {
 // EXCEPCIONES
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum GithubErrorKind { unauthorized, forbidden, notFound, rateLimit, network, unknown }
+enum GithubErrorKind {
+  unauthorized,
+  forbidden,
+  notFound,
+  rateLimit,
+  network,
+  unknown
+}
 
 class GithubException implements Exception {
   final String message;
   final int? statusCode;
   final GithubErrorKind kind;
   final bool isRateLimit;
+  final DateTime? rateLimitReset; // FIX #5 — expone reset time
 
   const GithubException(
     this.message, {
     this.statusCode,
     this.kind = GithubErrorKind.unknown,
     this.isRateLimit = false,
+    this.rateLimitReset,
   });
 
   @override
@@ -163,56 +266,121 @@ class GithubException implements Exception {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CREDENTIALS SERVICE — delete selectivo, nunca deleteAll (punto 4)
+// MULTI-ACCOUNT STORAGE SERVICE
 // ─────────────────────────────────────────────────────────────────────────────
 
-class CredentialsService {
+class AccountStorageService {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
-  static const _kOwner  = 'gha_v1_owner';
-  static const _kRepo   = 'gha_v1_repo';
-  static const _kToken  = 'gha_v1_token';
-  static const _kBranch = 'gha_v1_branch';
+  static const _kAccountsJson   = 'gha_v2_accounts';
+  static const _kReposJson      = 'gha_v2_repos';
+  static const _kActiveRepoId   = 'gha_v2_active_repo';
+  static const _tokenPrefix     = 'gha_v2_token_'; // + accountId
 
-  Future<void> save(GithubCredentials c) async {
-    Log.d('Creds', 'Guardando → ${c.owner}/${c.repo} [${c.branch}]');
-    await Future.wait([
-      _storage.write(key: _kOwner,  value: c.owner),
-      _storage.write(key: _kRepo,   value: c.repo),
-      _storage.write(key: _kToken,  value: c.token),
-      _storage.write(key: _kBranch, value: c.branch),
-    ]);
+  // ── CUENTAS ────────────────────────────────────────────────────────────────
+
+  Future<List<GithubAccount>> loadAccounts() async {
+    final raw = await _storage.read(key: _kAccountsJson);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List<dynamic>;
+    final accounts = list
+        .map((e) => GithubAccount.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // Hidratar tokens desde secure storage
+    final hydrated = <GithubAccount>[];
+    for (final acc in accounts) {
+      final token =
+          await _storage.read(key: '$_tokenPrefix${acc.id}') ?? '';
+      hydrated.add(acc.copyWith(token: token));
+    }
+    return hydrated;
   }
 
-  Future<GithubCredentials?> load() async {
-    final r = await Future.wait([
-      _storage.read(key: _kOwner),
-      _storage.read(key: _kRepo),
-      _storage.read(key: _kToken),
-      _storage.read(key: _kBranch),
-    ]);
-    if (r[0] == null || r[1] == null || r[2] == null) return null;
-    Log.d('Creds', 'Cargado → ${r[0]}/${r[1]} [${r[3] ?? 'main'}]');
-    return GithubCredentials(
-        owner: r[0]!, repo: r[1]!, token: r[2]!, branch: r[3] ?? 'main');
+  Future<void> saveAccount(GithubAccount account) async {
+    final accounts = await loadAccounts();
+    final idx = accounts.indexWhere((a) => a.id == account.id);
+    if (idx >= 0) {
+      accounts[idx] = account;
+    } else {
+      accounts.add(account);
+    }
+    await _storage.write(
+      key: _kAccountsJson,
+      value: jsonEncode(accounts.map((a) => a.toJson()).toList()),
+    );
+    await _storage.write(
+      key: '$_tokenPrefix${account.id}',
+      value: account.token,
+    );
+    Log.d('Storage', 'Cuenta guardada: ${account.label}');
   }
 
-  Future<void> clear() async {
-    Log.d('Creds', 'Borrando keys específicas');
-    await Future.wait([
-      _storage.delete(key: _kOwner),
-      _storage.delete(key: _kRepo),
-      _storage.delete(key: _kToken),
-      _storage.delete(key: _kBranch),
-    ]);
+  Future<void> deleteAccount(String accountId) async {
+    final accounts = await loadAccounts();
+    accounts.removeWhere((a) => a.id == accountId);
+    await _storage.write(
+      key: _kAccountsJson,
+      value: jsonEncode(accounts.map((a) => a.toJson()).toList()),
+    );
+    await _storage.delete(key: '$_tokenPrefix$accountId');
+    Log.d('Storage', 'Cuenta eliminada: $accountId');
+  }
+
+  // ── REPOS ──────────────────────────────────────────────────────────────────
+
+  Future<List<GithubRepo>> loadRepos() async {
+    final raw = await _storage.read(key: _kReposJson);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List<dynamic>;
+    return list
+        .map((e) => GithubRepo.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> saveRepo(GithubRepo repo) async {
+    final repos = await loadRepos();
+    final idx = repos.indexWhere((r) => r.id == repo.id);
+    if (idx >= 0) {
+      repos[idx] = repo;
+    } else {
+      repos.add(repo);
+    }
+    await _storage.write(
+      key: _kReposJson,
+      value: jsonEncode(repos.map((r) => r.toJson()).toList()),
+    );
+    Log.d('Storage', 'Repo guardado: ${repo.label}');
+  }
+
+  Future<void> deleteRepo(String repoId) async {
+    final repos = await loadRepos();
+    repos.removeWhere((r) => r.id == repoId);
+    await _storage.write(
+      key: _kReposJson,
+      value: jsonEncode(repos.map((r) => r.toJson()).toList()),
+    );
+    Log.d('Storage', 'Repo eliminado: $repoId');
+  }
+
+  // ── REPO ACTIVO ────────────────────────────────────────────────────────────
+
+  Future<String?> loadActiveRepoId() =>
+      _storage.read(key: _kActiveRepoId);
+
+  Future<void> saveActiveRepoId(String? id) async {
+    if (id == null) {
+      await _storage.delete(key: _kActiveRepoId);
+    } else {
+      await _storage.write(key: _kActiveRepoId, value: id);
+    }
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GITHUB API SERVICE
+// GITHUB API SERVICE — fixes #2 (no retry POST), #3 (exp backoff), #4 (branch filter), #5 (reset datetime)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class GithubApiService {
@@ -221,29 +389,33 @@ class GithubApiService {
   static const _tag     = 'API';
 
   Map<String, String> _headers(String token) => {
-    'Authorization': 'Bearer $token',
-    'Accept': 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  };
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      };
 
-  // ── Rate limit (punto 3) ──────────────────────────────────────────────────
   bool _isRateLimit(http.Response res) {
-    if (res.statusCode != 403) return false;
+    if (res.statusCode != 403 && res.statusCode != 429) return false;
     final remaining = res.headers['x-ratelimit-remaining'];
     return remaining == '0';
   }
 
   GithubException _rateLimitException(http.Response res) {
     final reset = res.headers['x-ratelimit-reset'];
-    final resetTime = reset != null
-        ? DateTime.fromMillisecondsSinceEpoch(int.parse(reset) * 1000)
-        : null;
+    DateTime? resetTime;
+    if (reset != null) {
+      resetTime = DateTime.fromMillisecondsSinceEpoch(
+          int.parse(reset) * 1000);
+    }
     final msg = resetTime != null
         ? 'Rate limit alcanzado. Se restablece a las ${resetTime.toLocal().toString().substring(11, 16)}.'
         : 'Rate limit alcanzado. Espera unos minutos.';
     Log.e(_tag, 'Rate limit hit');
     return GithubException(msg,
-        statusCode: 403, kind: GithubErrorKind.rateLimit, isRateLimit: true);
+        statusCode: res.statusCode,
+        kind: GithubErrorKind.rateLimit,
+        isRateLimit: true,
+        rateLimitReset: resetTime); // FIX #5
   }
 
   void _checkStatus(http.Response res) {
@@ -256,11 +428,15 @@ class GithubApiService {
         throw const GithubException('Sin permisos para esta acción.',
             statusCode: 403, kind: GithubErrorKind.forbidden);
       case 404:
-        throw const GithubException('Repositorio o recurso no encontrado.',
-            statusCode: 404, kind: GithubErrorKind.notFound);
+        throw const GithubException(
+            'Repositorio o recurso no encontrado.',
+            statusCode: 404,
+            kind: GithubErrorKind.notFound);
       case 422:
-        throw const GithubException('Parámetros inválidos. Verifica el branch.',
-            statusCode: 422, kind: GithubErrorKind.unknown);
+        throw const GithubException(
+            'Parámetros inválidos. Verifica el branch.',
+            statusCode: 422,
+            kind: GithubErrorKind.unknown);
       default:
         if (res.statusCode >= 400) {
           throw GithubException('Error HTTP ${res.statusCode}.',
@@ -269,9 +445,10 @@ class GithubApiService {
     }
   }
 
-  // ── Retry GET (punto 10) ──────────────────────────────────────────────────
-  Future<http.Response> _get(Uri uri, String token) async {
-    for (int attempt = 1; attempt <= 2; attempt++) {
+  /// FIX #3 — exponential backoff en GET
+  Future<http.Response> _get(Uri uri, String token,
+      {int maxAttempts = 2}) async {
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         final res =
             await http.get(uri, headers: _headers(token)).timeout(_timeout);
@@ -281,41 +458,40 @@ class GithubApiService {
         rethrow;
       } catch (e) {
         Log.e(_tag, 'GET ${uri.path} intento $attempt falló', e);
-        if (attempt == 2) {
-          throw const GithubException('Error de conexión tras 2 intentos.',
+        if (attempt == maxAttempts) {
+          throw const GithubException('Error de conexión tras reintentos.',
               kind: GithubErrorKind.network);
         }
-        await Future.delayed(const Duration(seconds: 2));
+        // Backoff exponencial: 2s, 4s, 8s…
+        await Future.delayed(Duration(seconds: 2 << (attempt - 1)));
       }
     }
-    throw const GithubException('Error inesperado.', kind: GithubErrorKind.unknown);
+    throw const GithubException('Error inesperado.',
+        kind: GithubErrorKind.unknown);
   }
 
-  // ── Retry POST (punto 10) ─────────────────────────────────────────────────
+  /// FIX #2 — POST sin retry para evitar dispatches duplicados
   Future<http.Response> _post(
       Uri uri, String token, Map<String, dynamic> body) async {
-    for (int attempt = 1; attempt <= 2; attempt++) {
-      try {
-        final res = await http
-            .post(uri, headers: _headers(token), body: jsonEncode(body))
-            .timeout(_timeout);
-        Log.d(_tag, 'POST ${uri.path} → ${res.statusCode} (intento $attempt)');
-        return res;
-      } on GithubException {
-        rethrow;
-      } catch (e) {
-        Log.e(_tag, 'POST ${uri.path} intento $attempt falló', e);
-        if (attempt == 2) {
-          throw const GithubException('Error de conexión tras 2 intentos.',
-              kind: GithubErrorKind.network);
-        }
-        await Future.delayed(const Duration(seconds: 2));
-      }
+    try {
+      final res = await http
+          .post(uri, headers: _headers(token), body: jsonEncode(body))
+          .timeout(_timeout);
+      Log.d(_tag, 'POST ${uri.path} → ${res.statusCode}');
+      return res;
+    } on GithubException {
+      rethrow;
+    } on TimeoutException {
+      throw const GithubException(
+          'Tiempo de espera agotado. El workflow puede haberse iniciado.',
+          kind: GithubErrorKind.network);
+    } catch (e) {
+      Log.e(_tag, 'POST ${uri.path} falló', e);
+      throw const GithubException('Error de conexión.',
+          kind: GithubErrorKind.network);
     }
-    throw const GithubException('Error inesperado.', kind: GithubErrorKind.unknown);
   }
 
-  // ── Punto 1: Validar token ────────────────────────────────────────────────
   Future<void> validateToken(String token) async {
     Log.d(_tag, 'Validando token…');
     final uri = Uri.parse('$_base/user');
@@ -351,9 +527,10 @@ class GithubApiService {
     return workflows;
   }
 
+  /// FIX #4 — filtra por branch para que per_page=50 no pierda runs relevantes
   Future<Map<int, WorkflowRun>> getLatestRuns(GithubCredentials c) async {
     final uri = Uri.parse(
-        '$_base/repos/${c.owner}/${c.repo}/actions/runs?per_page=50');
+        '$_base/repos/${c.owner}/${c.repo}/actions/runs?per_page=100&branch=${Uri.encodeComponent(c.branch)}');
     final res = await _get(uri, c.token);
     _checkStatus(res);
     final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -372,7 +549,7 @@ class GithubApiService {
   Future<void> dispatchWorkflow(
     GithubCredentials c,
     int workflowId, {
-    Map<String, dynamic>? inputs, // punto 6
+    Map<String, dynamic>? inputs,
   }) async {
     final uri = Uri.parse(
         '$_base/repos/${c.owner}/${c.repo}/actions/workflows/$workflowId/dispatches');
@@ -389,25 +566,31 @@ class GithubApiService {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class GithubRepository {
-  final GithubApiService   _api;
-  final CredentialsService _creds;
+  final GithubApiService      _api;
+  final AccountStorageService _storage;
 
-  GithubRepository({GithubApiService? api, CredentialsService? creds})
-      : _api   = api   ?? GithubApiService(),
-        _creds = creds ?? CredentialsService();
+  GithubRepository({GithubApiService? api, AccountStorageService? storage})
+      : _api     = api     ?? GithubApiService(),
+        _storage = storage ?? AccountStorageService();
 
-  Future<GithubCredentials?> loadCredentials() => _creds.load();
+  Future<List<GithubAccount>> loadAccounts()      => _storage.loadAccounts();
+  Future<List<GithubRepo>>    loadRepos()         => _storage.loadRepos();
+  Future<String?>             loadActiveRepoId()  => _storage.loadActiveRepoId();
+  Future<void> saveActiveRepoId(String? id)       => _storage.saveActiveRepoId(id);
 
-  /// Punto 1: valida con la API antes de persistir.
-  Future<void> validateAndSave(GithubCredentials c) async {
-    await _api.validateToken(c.token);
-    await _creds.save(c);
+  Future<void> validateAndSaveAccount(GithubAccount account) async {
+    await _api.validateToken(account.token);
+    await _storage.saveAccount(account);
   }
 
-  Future<void> clearCredentials()         => _creds.clear();
-  Future<List<Workflow>> getWorkflows(GithubCredentials c) => _api.getWorkflows(c);
-  Future<Map<int, WorkflowRun>> getLatestRuns(GithubCredentials c) => _api.getLatestRuns(c);
+  Future<void> saveRepo(GithubRepo repo)          => _storage.saveRepo(repo);
+  Future<void> deleteAccount(String id)           => _storage.deleteAccount(id);
+  Future<void> deleteRepo(String id)              => _storage.deleteRepo(id);
+
+  Future<List<Workflow>>        getWorkflows(GithubCredentials c)   => _api.getWorkflows(c);
+  Future<Map<int, WorkflowRun>> getLatestRuns(GithubCredentials c)  => _api.getLatestRuns(c);
   Future<void> dispatchWorkflow(GithubCredentials c, int id,
           {Map<String, dynamic>? inputs}) =>
       _api.dispatchWorkflow(c, id, inputs: inputs);
+  Future<void> validateToken(String token) => _api.validateToken(token);
 }
