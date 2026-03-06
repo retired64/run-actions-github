@@ -41,6 +41,10 @@ class AccountsProvider extends ChangeNotifier {
   bool _validating = false;
   bool get isValidating => _validating;
 
+  // Expone el id de la última cuenta guardada para que la UI abra el sheet de repo
+  String? _lastSavedAccountId;
+  String? get lastSavedAccountId => _lastSavedAccountId;
+
   // FIX #3 — _loaded ya no está en el router; el provider mismo lo maneja
   bool _initialized = false;
   bool get initialized => _initialized;
@@ -147,6 +151,7 @@ class AccountsProvider extends ChangeNotifier {
         _accounts.add(account);
       }
       _validating = false;
+      _lastSavedAccountId = id;
       Log.d(_tag, 'Cuenta guardada: ${account.label}');
       notifyListeners();
       return null; // éxito
