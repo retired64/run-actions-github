@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'provider.dart';
+import 'artifacts_provider.dart';
 import 'services.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AccountsProvider()..init()),
         ChangeNotifierProvider(create: (_) => WorkflowsProvider()),
+        ChangeNotifierProvider(create: (_) => ArtifactsProvider()),
       ],
       child: const GhaPanelApp(),
     ),
@@ -499,6 +501,22 @@ class _AppDrawer extends StatelessWidget {
                   ),
 
                   const Divider(height: 24),
+
+                  // Artefactos ← NUEVO
+                  _DrawerActionTile(
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Artefactos',
+                    color: _C.blue,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ArtifactsScreen(),
+                        ),
+                      );
+                    },
+                  ),
 
                   // Ajustes
                   _DrawerActionTile(
@@ -1668,6 +1686,17 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
+          const _SettingsSection('DESCARGAS'),
+          _SettingsActionTile(
+            icon: Icons.inventory_2_outlined,
+            label: 'Artefactos de workflows',
+            color: _C.blue,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ArtifactsScreen()),
+            ),
+          ),
+          const Divider(height: 32),
           const _SettingsSection('CUENTAS Y REPOSITORIOS'),
           for (final acc in accounts.accounts)
             _AccountSettingsTile(account: acc),
@@ -2557,6 +2586,477 @@ class _EmptyView extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ARTIFACTS SCREEN ← NUEVA PANTALLA
+// ─────────────────────────────────────────────────────────────────────────────
+
+class ArtifactsScreen extends StatefulWidget {
+  const ArtifactsScreen({super.key});
+
+  @override
+  State<ArtifactsScreen> createState() => _ArtifactsScreenState();
+}
+
+class _ArtifactsScreenState extends State<ArtifactsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  void _load() {
+    final accounts  = context.read<AccountsProvider>();
+    final workflows = context.read<WorkflowsProvider>();
+    final arts      = context.read<ArtifactsProvider>();
+    final creds     = accounts.activeCredentials;
+    if (creds == null) return;
+    arts.load(creds, workflows.workflows);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accounts = context.watch<AccountsProvider>();
+    final arts     = context.watch<ArtifactsProvider>();
+    final creds    = accounts.activeCredentials;
+
+    return Scaffold(
+      backgroundColor: _C.bg,
+      appBar: AppBar(
+        title: const Text('Artefactos',
+            style: TextStyle(
+                color: _C.text,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace')),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: _C.muted, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          if (!arts.isLoading)
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: _C.muted, size: 20),
+              tooltip: 'Recargar',
+              onPressed: creds == null
+                  ? null
+                  : () => arts.load(
+                        creds,
+                        context.read<WorkflowsProvider>().workflows,
+                      ),
+            ),
+        ],
+      ),
+      body: _buildBody(arts, accounts, creds),
+    );
+  }
+
+  Widget _buildBody(
+    ArtifactsProvider arts,
+    AccountsProvider accounts,
+    GithubCredentials? creds,
+  ) {
+    if (creds == null) {
+      return const _ArtCenteredMsg(
+        icon: Icons.account_circle_outlined,
+        title: 'Sin cuenta activa',
+        subtitle: 'Configura una cuenta para ver artefactos.',
+      );
+    }
+
+    if (arts.isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 24, height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2, color: _C.accent),
+            ),
+            SizedBox(height: 14),
+            Text('Cargando artefactos…',
+                style: TextStyle(
+                    color: _C.muted, fontSize: 13, fontFamily: 'monospace')),
+          ],
+        ),
+      );
+    }
+
+    if (arts.state == ArtifactsState.error) {
+      return _ArtCenteredMsg(
+        icon: Icons.error_outline_rounded,
+        title: 'Error al cargar',
+        subtitle: arts.error ?? 'Error desconocido.',
+        action: TextButton.icon(
+          onPressed: () => arts.load(
+              creds, context.read<WorkflowsProvider>().workflows),
+          icon: const Icon(Icons.refresh_rounded, size: 16, color: _C.accent),
+          label: const Text('Reintentar',
+              style: TextStyle(
+                  color: _C.accent, fontSize: 13, fontFamily: 'monospace')),
+        ),
+      );
+    }
+
+    if (arts.artifacts.isEmpty) {
+      return const _ArtCenteredMsg(
+        icon: Icons.inbox_outlined,
+        title: 'Sin artefactos',
+        subtitle:
+            'No se encontraron artefactos recientes\nen los últimos 3 runs completados.',
+      );
+    }
+
+    final byWorkflow = arts.byWorkflow;
+    final owner  = accounts.activeCredentials!.owner;
+    final repo   = accounts.activeRepo!.repo;
+    final branch = accounts.activeCredentials!.branch;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Header resumen
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: _C.accentDim,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: _C.accent.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.inventory_2_outlined, color: _C.accent, size: 18),
+              const SizedBox(width: 10),
+              Text(
+                '${arts.artifacts.length} artefacto${arts.artifacts.length != 1 ? 's' : ''} · ${byWorkflow.length} workflow${byWorkflow.length != 1 ? 's' : ''}',
+                style: const TextStyle(
+                    color: _C.accent,
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Secciones por workflow
+        for (final entry in byWorkflow.entries) ...[
+          _ArtWorkflowSection(
+            workflowName: entry.key,
+            artifacts: entry.value,
+            owner: owner,
+            repo: repo,
+            branch: branch,
+            artsProvider: arts,
+          ),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+}
+
+class _ArtWorkflowSection extends StatelessWidget {
+  final String workflowName;
+  final List<WorkflowArtifact> artifacts;
+  final String owner;
+  final String repo;
+  final String branch;
+  final ArtifactsProvider artsProvider;
+
+  const _ArtWorkflowSection({
+    required this.workflowName,
+    required this.artifacts,
+    required this.owner,
+    required this.repo,
+    required this.branch,
+    required this.artsProvider,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: _C.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _C.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6, height: 6,
+                    decoration: const BoxDecoration(
+                        color: _C.accent, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(workflowName,
+                        style: const TextStyle(
+                            color: _C.text,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'monospace')),
+                  ),
+                  Text(
+                    '${artifacts.length} archivo${artifacts.length != 1 ? 's' : ''}',
+                    style: const TextStyle(
+                        color: _C.textDim, fontSize: 11, fontFamily: 'monospace'),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: _C.border, height: 1),
+            ...artifacts.asMap().entries.map((e) => _ArtifactTile(
+                  artifact: e.value,
+                  owner: owner,
+                  repo: repo,
+                  branch: branch,
+                  artsProvider: artsProvider,
+                  isLast: e.key == artifacts.length - 1,
+                )),
+          ],
+        ),
+      );
+}
+
+class _ArtifactTile extends StatelessWidget {
+  final WorkflowArtifact artifact;
+  final String owner;
+  final String repo;
+  final String branch;
+  final ArtifactsProvider artsProvider;
+  final bool isLast;
+
+  const _ArtifactTile({
+    required this.artifact,
+    required this.owner,
+    required this.repo,
+    required this.branch,
+    required this.artsProvider,
+    required this.isLast,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final progress    = artsProvider.downloadProgress(artifact.id);
+    final downloading = artsProvider.isDownloading(artifact.id);
+    final done        = artsProvider.isDownloaded(artifact.id);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: _C.surfaceHi2,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.folder_zip_outlined,
+                    color: _C.muted, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      artifact.name,
+                      style: const TextStyle(
+                          color: _C.text,
+                          fontSize: 13,
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Text(_fmtSize(artifact.sizeInBytes),
+                            style: const TextStyle(
+                                color: _C.textDim,
+                                fontSize: 11,
+                                fontFamily: 'monospace')),
+                        const Text(' · ',
+                            style: TextStyle(
+                                color: _C.textDim, fontSize: 11)),
+                        Text(_fmtDate(artifact.createdAt),
+                            style: const TextStyle(
+                                color: _C.textDim,
+                                fontSize: 11,
+                                fontFamily: 'monospace')),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: _C.blue.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                                color: _C.blue.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            'run #${artifact.runId}',
+                            style: const TextStyle(
+                                color: _C.blue,
+                                fontSize: 9,
+                                fontFamily: 'monospace'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (downloading && progress != null) ...[
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: _C.border,
+                        color: _C.accent,
+                        minHeight: 2,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${(progress * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                            color: _C.accent,
+                            fontSize: 10,
+                            fontFamily: 'monospace'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Botón descarga
+              if (downloading)
+                const SizedBox(
+                  width: 36, height: 36,
+                  child: Center(
+                    child: SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: _C.accent),
+                    ),
+                  ),
+                )
+              else if (done)
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: _C.accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.check_rounded,
+                      color: _C.accent, size: 18),
+                )
+              else
+                GestureDetector(
+                  onTap: () => _download(context),
+                  child: Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: _C.surfaceHi2,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _C.border),
+                    ),
+                    child: const Icon(Icons.download_rounded,
+                        color: _C.accent, size: 18),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (!isLast)
+          const Divider(color: _C.border, height: 1, indent: 62),
+      ],
+    );
+  }
+
+  void _download(BuildContext context) {
+    artsProvider.downloadArtifact(
+      artifact: artifact,
+      owner: owner,
+      repo: repo,
+      branch: branch,
+      onSuccess: (path) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          _buildSnack('✓ ${artifact.name}.zip guardado en Descargas'),
+        );
+      },
+      onError: (err) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(_buildSnack('Error: $err', isError: true));
+      },
+    );
+  }
+
+  String _fmtSize(int bytes) {
+    if (bytes >= 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes >= 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '$bytes B';
+  }
+
+  String _fmtDate(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inDays > 0) return 'hace ${diff.inDays}d';
+    if (diff.inHours > 0) return 'hace ${diff.inHours}h';
+    if (diff.inMinutes > 0) return 'hace ${diff.inMinutes}m';
+    return 'ahora';
+  }
+}
+
+class _ArtCenteredMsg extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget? action;
+
+  const _ArtCenteredMsg({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.action,
+  });
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: _C.textDim, size: 42),
+              const SizedBox(height: 14),
+              Text(title,
+                  style: const TextStyle(
+                      color: _C.muted,
+                      fontSize: 15,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Text(subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: _C.textDim,
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      height: 1.5)),
+              if (action != null) ...[const SizedBox(height: 20), action!],
+            ],
+          ),
         ),
       );
 }
