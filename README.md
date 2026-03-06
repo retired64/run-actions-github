@@ -1,5 +1,7 @@
 # actionsgh
 
+Cliente no oficial de GitHub Actions. Gestiona workflows, inyecta inputs dinámicos y monitorea runs en tiempo real a través de múltiples cuentas, utilizando almacenamiento cifrado (Keystore/Keychain) para tus Personal Access Tokens.
+
 A new Flutter project.
 
 ## Getting Started
