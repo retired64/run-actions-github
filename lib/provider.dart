@@ -7,7 +7,8 @@ import 'services.dart';
 // ESTADOS GRANULARES
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum InitState   { idle, loading, ready, error }
+enum InitState { idle, loading, ready, error }
+
 enum RefreshState { idle, refreshing, error }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,19 +17,19 @@ enum RefreshState { idle, refreshing, error }
 
 class AccountsProvider extends ChangeNotifier {
   AccountsProvider({GithubRepository? repository})
-      : _repo = repository ?? GithubRepository();
+    : _repo = repository ?? GithubRepository();
 
   final GithubRepository _repo;
   static const _tag = 'AccountsProvider';
   static const _uuid = Uuid();
 
   List<GithubAccount> _accounts = [];
-  List<GithubRepo>    _repos    = [];
-  GithubRepo?         _activeRepo;
+  List<GithubRepo> _repos = [];
+  GithubRepo? _activeRepo;
 
-  List<GithubAccount> get accounts  => _accounts;
-  List<GithubRepo>    get repos     => _repos;
-  GithubRepo?         get activeRepo => _activeRepo;
+  List<GithubAccount> get accounts => _accounts;
+  List<GithubRepo> get repos => _repos;
+  GithubRepo? get activeRepo => _activeRepo;
 
   bool get hasActiveRepo => _activeRepo != null;
 
@@ -65,12 +66,20 @@ class AccountsProvider extends ChangeNotifier {
     final acc = accountForRepo(repo);
     if (acc == null) return null;
     return GithubCredentials(
-      owner:  acc.owner,
-      repo:   repo.repo,
-      token:  acc.token,
+      owner: acc.owner,
+      repo: repo.repo,
+      token: acc.token,
       branch: repo.branch,
     );
   }
+
+  Future<List<String>> getUserRepos(String token) => _repo.getUserRepos(token);
+
+  Future<List<String>> getRepoBranches(
+    String owner,
+    String repo,
+    String token,
+  ) => _repo.getRepoBranches(owner, repo, token);
 
   GithubCredentials? get activeCredentials =>
       _activeRepo != null ? credentialsFor(_activeRepo!) : null;
@@ -88,28 +97,32 @@ class AccountsProvider extends ChangeNotifier {
         _repo.loadActiveRepoId(),
       ]);
       _accounts = results[0] as List<GithubAccount>;
-      _repos    = results[1] as List<GithubRepo>;
+      _repos = results[1] as List<GithubRepo>;
       final activeId = results[2] as String?;
 
       if (activeId != null) {
         _activeRepo = _repos.firstWhere(
           (r) => r.id == activeId,
-          orElse: () => _repos.isNotEmpty ? _repos.first : throw StateError('no repos'),
+          orElse: () =>
+              _repos.isNotEmpty ? _repos.first : throw StateError('no repos'),
         );
       } else if (_repos.isNotEmpty) {
         _activeRepo = _repos.first;
         await _repo.saveActiveRepoId(_activeRepo!.id);
       }
 
-      Log.d(_tag, 'Init OK — ${_accounts.length} cuentas, ${_repos.length} repos');
+      Log.d(
+        _tag,
+        'Init OK — ${_accounts.length} cuentas, ${_repos.length} repos',
+      );
     } catch (e) {
       Log.e(_tag, 'Init falló', e);
       _accounts = [];
-      _repos    = [];
+      _repos = [];
       _activeRepo = null;
     } finally {
-      _loading      = false;
-      _initialized  = true;
+      _loading = false;
+      _initialized = true;
       notifyListeners();
     }
   }
@@ -131,12 +144,12 @@ class AccountsProvider extends ChangeNotifier {
     required String label,
   }) async {
     _validating = true;
-    _error      = null;
+    _error = null;
     notifyListeners();
 
-    final id      = existingId ?? _uuid.v4();
+    final id = existingId ?? _uuid.v4();
     final account = GithubAccount(
-      id:    id,
+      id: id,
       owner: owner.trim(),
       token: token.trim(),
       label: label.trim().isEmpty ? owner.trim() : label.trim(),
@@ -156,13 +169,13 @@ class AccountsProvider extends ChangeNotifier {
       notifyListeners();
       return null; // éxito
     } on GithubException catch (e) {
-      _error      = e.message;
+      _error = e.message;
       _validating = false;
       Log.e(_tag, 'saveAccount falló', e);
       notifyListeners();
       return e.message;
     } catch (e) {
-      _error      = 'Error inesperado.';
+      _error = 'Error inesperado.';
       _validating = false;
       Log.e(_tag, 'saveAccount error inesperado', e);
       notifyListeners();
@@ -171,7 +184,9 @@ class AccountsProvider extends ChangeNotifier {
   }
 
   Future<void> deleteAccount(
-      String accountId, WorkflowsProvider workflowsProvider) async {
+    String accountId,
+    WorkflowsProvider workflowsProvider,
+  ) async {
     // Eliminar repos asociados
     final associated = reposForAccount(accountId).map((r) => r.id).toList();
     for (final rid in associated) {
@@ -207,35 +222,35 @@ class AccountsProvider extends ChangeNotifier {
     final account = _accounts[accIdx];
 
     _validating = true;
-    _error      = null;
+    _error = null;
     notifyListeners();
 
-    final id   = existingId ?? _uuid.v4();
+    final id = existingId ?? _uuid.v4();
     final repo = GithubRepo(
-      id:        id,
+      id: id,
       accountId: accountId,
-      repo:      repoName.trim(),
-      branch:    branch.trim().isEmpty ? 'main' : branch.trim(),
-      label:     label.trim().isEmpty ? repoName.trim() : label.trim(),
+      repo: repoName.trim(),
+      branch: branch.trim().isEmpty ? 'main' : branch.trim(),
+      label: label.trim().isEmpty ? repoName.trim() : label.trim(),
     );
 
     // Validar acceso al repo antes de guardar
     try {
       final creds = GithubCredentials(
-        owner:  account.owner,
-        repo:   repo.repo,
-        token:  account.token,
+        owner: account.owner,
+        repo: repo.repo,
+        token: account.token,
         branch: repo.branch,
       );
       await _repo.getWorkflows(creds); // prueba de acceso
     } on GithubException catch (e) {
-      _error      = e.message;
+      _error = e.message;
       _validating = false;
       Log.e(_tag, 'saveRepo — validación acceso falló', e);
       notifyListeners();
       return e.message;
     } catch (e) {
-      _error      = 'Error al validar el repositorio.';
+      _error = 'Error al validar el repositorio.';
       _validating = false;
       notifyListeners();
       return _error;
@@ -260,7 +275,7 @@ class AccountsProvider extends ChangeNotifier {
       notifyListeners();
       return null;
     } catch (e) {
-      _error      = 'Error al guardar el repositorio.';
+      _error = 'Error al guardar el repositorio.';
       _validating = false;
       Log.e(_tag, 'saveRepo error', e);
       notifyListeners();
@@ -269,7 +284,9 @@ class AccountsProvider extends ChangeNotifier {
   }
 
   Future<void> deleteRepo(
-      String repoId, WorkflowsProvider workflowsProvider) async {
+    String repoId,
+    WorkflowsProvider workflowsProvider,
+  ) async {
     final wasActive = _activeRepo?.id == repoId;
     _repos.removeWhere((r) => r.id == repoId);
     await _repo.deleteRepo(repoId);
@@ -280,7 +297,8 @@ class AccountsProvider extends ChangeNotifier {
       workflowsProvider.reset();
       if (_activeRepo != null) {
         final creds = credentialsFor(_activeRepo!);
-        if (creds != null) await workflowsProvider.load(creds);
+        if (creds != null)
+          await workflowsProvider.load(creds, repoId: _activeRepo!.id);
       }
     }
     Log.d(_tag, 'Repo eliminado: $repoId');
@@ -295,28 +313,28 @@ class AccountsProvider extends ChangeNotifier {
 
 class WorkflowsProvider extends ChangeNotifier {
   WorkflowsProvider({GithubRepository? repository})
-      : _repo = repository ?? GithubRepository();
+    : _repo = repository ?? GithubRepository();
 
   final GithubRepository _repo;
   static const _tag = 'WorkflowsProvider';
 
-  List<Workflow>        _workflows   = [];
-  Map<int, WorkflowRun> _runs        = {};
-  List<Workflow>        get workflows => _workflows;
-  WorkflowRun? runFor(int id)         => _runs[id];
+  List<Workflow> _workflows = [];
+  Map<int, WorkflowRun> _runs = {};
+  List<Workflow> get workflows => _workflows;
+  WorkflowRun? runFor(int id) => _runs[id];
 
-  InitState    _initState    = InitState.idle;
+  InitState _initState = InitState.idle;
   RefreshState _refreshState = RefreshState.idle;
-  InitState    get initState    => _initState;
+  InitState get initState => _initState;
   RefreshState get refreshState => _refreshState;
 
   bool get isInitialLoading => _initState == InitState.loading;
-  bool get isRefreshing     => _refreshState == RefreshState.refreshing;
-  bool get isPollingActive  => _pollTimer != null;
-  bool get hasData          => _initState == InitState.ready;
+  bool get isRefreshing => _refreshState == RefreshState.refreshing;
+  bool get isPollingActive => _pollTimer != null;
+  bool get hasData => _initState == InitState.ready;
 
-  final Map<int, bool> _dispatching    = {};
-  bool isDispatching(int id)           => _dispatching[id] ?? false;
+  final Map<int, bool> _dispatching = {};
+  bool isDispatching(int id) => _dispatching[id] ?? false;
 
   // FIX #6 — workflows que acaban de hacer dispatch y esperan run
   final Set<int> _awaitingRun = {};
@@ -325,9 +343,9 @@ class WorkflowsProvider extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
-  bool      _rateLimited     = false;
-  DateTime? _rateLimitReset;           // FIX #5
-  bool      get isRateLimited  => _rateLimited;
+  bool _rateLimited = false;
+  DateTime? _rateLimitReset; // FIX #5
+  bool get isRateLimited => _rateLimited;
   DateTime? get rateLimitReset => _rateLimitReset;
 
   /// FIX #5 — countdown restante en segundos (null si no aplica)
@@ -340,29 +358,46 @@ class WorkflowsProvider extends ChangeNotifier {
   Timer? _pollTimer;
   Timer? _countdownTimer; // FIX #5 — tick cada segundo para countdown
 
-  // ─── CARGA INICIAL ────────────────────────────────────────────────────────
+  // ─── CARGA INICIAL (cache-first) ──────────────────────────────────────
 
-  Future<void> load(GithubCredentials creds) async {
-    _initState = InitState.loading;
-    _error     = null;
-    notifyListeners();
+  Future<void> load(GithubCredentials creds, {required String repoId}) async {
+    // ── 1. Mostrar cache inmediatamente si existe ──────────────────────────
+    final cached = await WorkflowCacheService.load(repoId);
+    if (cached != null) {
+      _workflows = cached.workflows;
+      _runs = cached.runs;
+      _initState = InitState.ready;
+      notifyListeners();
+    } else {
+      _initState = InitState.loading;
+      _error = null;
+      notifyListeners();
+    }
 
+    // ── 2. Carga desde red (actualiza silenciosamente) ─────────────────────
     try {
       final results = await Future.wait([
         _repo.getWorkflows(creds),
         _repo.getLatestRuns(creds),
       ]);
-      _workflows   = results[0] as List<Workflow>;
-      _runs        = results[1] as Map<int, WorkflowRun>;
-      _initState   = InitState.ready;
+      _workflows = results[0] as List<Workflow>;
+      _runs = results[1] as Map<int, WorkflowRun>;
+      _initState = InitState.ready;
       _rateLimited = false;
       _rateLimitReset = null;
-      Log.d(_tag, 'Carga inicial OK: ${_workflows.length} workflows');
+
+      // ── 3. Persistir para el próximo arranque ────────────────────────────
+      await WorkflowCacheService.save(
+        repoId: repoId,
+        workflows: _workflows,
+        runs: _runs,
+      );
+      Log.d(_tag, 'Carga OK: ${_workflows.length} workflows');
     } on GithubException catch (e) {
-      _error     = e.message;
-      _initState = InitState.error;
+      _error = e.message;
+      if (cached == null) _initState = InitState.error;
       if (e.isRateLimit) {
-        _rateLimited    = true;
+        _rateLimited = true;
         _rateLimitReset = e.rateLimitReset;
         _startCountdown();
       }
@@ -387,18 +422,18 @@ class WorkflowsProvider extends ChangeNotifier {
         _repo.getWorkflows(creds),
         _repo.getLatestRuns(creds),
       ]);
-      _workflows    = results[0] as List<Workflow>;
-      _runs         = results[1] as Map<int, WorkflowRun>;
+      _workflows = results[0] as List<Workflow>;
+      _runs = results[1] as Map<int, WorkflowRun>;
       _refreshState = RefreshState.idle;
-      _rateLimited  = false;
+      _rateLimited = false;
       _rateLimitReset = null;
       Log.d(_tag, 'Refresh OK');
     } on GithubException catch (e) {
       _refreshState = RefreshState.error;
       if (e.isRateLimit) {
-        _rateLimited    = true;
+        _rateLimited = true;
         _rateLimitReset = e.rateLimitReset;
-        _error          = e.message;
+        _error = e.message;
         _startCountdown();
       }
       Log.e(_tag, 'refresh falló — manteniendo estado anterior', e);
@@ -416,7 +451,7 @@ class WorkflowsProvider extends ChangeNotifier {
   }) async {
     if (_rateLimited) return 'Rate limit activo. Espera antes de ejecutar.';
 
-    _dispatching[workflowId]  = true;
+    _dispatching[workflowId] = true;
     notifyListeners();
 
     try {
@@ -430,7 +465,7 @@ class WorkflowsProvider extends ChangeNotifier {
     } on GithubException catch (e) {
       _dispatching[workflowId] = false;
       if (e.isRateLimit) {
-        _rateLimited    = true;
+        _rateLimited = true;
         _rateLimitReset = e.rateLimitReset;
         _startCountdown();
       }
@@ -444,9 +479,9 @@ class WorkflowsProvider extends ChangeNotifier {
 
   void _startPolling(GithubCredentials creds) {
     _pollTimer?.cancel();
-    int ticks      = 0;
+    int ticks = 0;
     int failStreak = 0;
-    const maxTicks = 15;   // 60s máximo
+    const maxTicks = 15; // 60s máximo
     const maxFails = 3;
 
     Log.d(_tag, 'Polling iniciado');
@@ -474,9 +509,9 @@ class WorkflowsProvider extends ChangeNotifier {
         failStreak++;
         Log.e(_tag, 'Poll tick $ticks falló (racha: $failStreak)', e);
         if (e.isRateLimit) {
-          _rateLimited    = true;
+          _rateLimited = true;
           _rateLimitReset = e.rateLimitReset;
-          _error          = e.message;
+          _error = e.message;
           _startCountdown();
           notifyListeners();
         }
@@ -511,7 +546,7 @@ class WorkflowsProvider extends ChangeNotifier {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final left = _rateLimitReset!.difference(DateTime.now()).inSeconds;
       if (left <= 0) {
-        _rateLimited    = false;
+        _rateLimited = false;
         _rateLimitReset = null;
         _countdownTimer?.cancel();
         _countdownTimer = null;
@@ -525,17 +560,18 @@ class WorkflowsProvider extends ChangeNotifier {
   void reset() {
     _pollTimer?.cancel();
     _countdownTimer?.cancel();
-    _pollTimer      = null;
+    _pollTimer = null;
     _countdownTimer = null;
-    _workflows      = [];
-    _runs           = {};
-    _initState      = InitState.idle;
-    _refreshState   = RefreshState.idle;
-    _error          = null;
-    _rateLimited    = false;
+    _workflows = [];
+    _runs = {};
+    _initState = InitState.idle;
+    _refreshState = RefreshState.idle;
+    _error = null;
+    _rateLimited = false;
     _rateLimitReset = null;
     _dispatching.clear();
     _awaitingRun.clear();
+    WorkflowCacheService.clear();
     notifyListeners();
   }
 

@@ -1,30 +1,33 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 import 'provider.dart';
 import 'artifacts_provider.dart';
 import 'services.dart';
+import 'notification_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COLORES
 // ─────────────────────────────────────────────────────────────────────────────
 
 abstract final class _C {
-  static const bg         = Color(0xFF0D0D0F);
-  static const surface    = Color(0xFF1C1C1E);
-  static const surfaceHi  = Color(0xFF242428);
+  static const bg = Color(0xFF0D0D0F);
+  static const surface = Color(0xFF1C1C1E);
+  static const surfaceHi = Color(0xFF242428);
   static const surfaceHi2 = Color(0xFF2C2C30);
-  static const border     = Color(0xFF2C2C2E);
-  static const accent     = Color(0xFF00D084);
-  static const accentDim  = Color(0xFF00D08420);
-  static const danger     = Color(0xFFFF453A);
-  static const warn       = Color(0xFFFFD60A);
-  static const warnDim    = Color(0xFFFFD60A20);
-  static const blue       = Color(0xFF0A84FF);
-  static const muted      = Color(0xFF8E8E93);
-  static const text       = Color(0xFFEEEEF0);
-  static const textDim    = Color(0xFF6E6E73);
+  static const border = Color(0xFF2C2C2E);
+  static const accent = Color(0xFF00D084);
+  static const accentDim = Color(0xFF00D08420);
+  static const danger = Color(0xFFFF453A);
+  static const warn = Color(0xFFFFD60A);
+  static const warnDim = Color(0xFFFFD60A20);
+  static const blue = Color(0xFF0A84FF);
+  static const muted = Color(0xFF8E8E93);
+  static const text = Color(0xFFEEEEF0);
+  static const textDim = Color(0xFF6E6E73);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,76 +35,79 @@ abstract final class _C {
 // ─────────────────────────────────────────────────────────────────────────────
 
 ThemeData _buildTheme() => ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: _C.bg,
-      primaryColor: _C.accent,
-      colorScheme: const ColorScheme.dark(
-        primary: _C.accent,
-        surface: _C.surface,
-        error: _C.danger,
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: _C.bg,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: TextStyle(
-          color: _C.text,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'monospace',
-        ),
-        iconTheme: IconThemeData(color: _C.muted),
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-        ),
-      ),
-      drawerTheme: const DrawerThemeData(
-        backgroundColor: _C.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      ),
-      dividerColor: _C.border,
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: _C.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _C.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _C.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _C.accent, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _C.danger),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _C.danger, width: 1.5),
-        ),
-        labelStyle: const TextStyle(color: _C.muted, fontSize: 13),
-        hintStyle: const TextStyle(
-          color: _C.textDim,
-          fontSize: 13,
-          fontFamily: 'monospace',
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      ),
-    );
+  brightness: Brightness.dark,
+  scaffoldBackgroundColor: _C.bg,
+  primaryColor: _C.accent,
+  colorScheme: const ColorScheme.dark(
+    primary: _C.accent,
+    surface: _C.surface,
+    error: _C.danger,
+  ),
+  appBarTheme: const AppBarTheme(
+    backgroundColor: _C.bg,
+    elevation: 0,
+    centerTitle: false,
+    titleTextStyle: TextStyle(
+      color: _C.text,
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      fontFamily: 'monospace',
+    ),
+    iconTheme: IconThemeData(color: _C.muted),
+    systemOverlayStyle: SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  ),
+  drawerTheme: const DrawerThemeData(
+    backgroundColor: _C.surface,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+  ),
+  dividerColor: _C.border,
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: _C.surface,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: _C.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: _C.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: _C.accent, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: _C.danger),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: _C.danger, width: 1.5),
+    ),
+    labelStyle: const TextStyle(color: _C.muted, fontSize: 13),
+    hintStyle: const TextStyle(
+      color: _C.textDim,
+      fontSize: 13,
+      fontFamily: 'monospace',
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+  ),
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ENTRY POINT
 // ─────────────────────────────────────────────────────────────────────────────
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  await NotificationService.init();
+  await Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
+
   runApp(
     MultiProvider(
       providers: [
@@ -119,11 +125,11 @@ class GhaPanelApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'GHA Panel',
-        debugShowCheckedModeBanner: false,
-        theme: _buildTheme(),
-        home: const _RootRouter(),
-      );
+    title: 'GHA Panel',
+    debugShowCheckedModeBanner: false,
+    theme: _buildTheme(),
+    home: const _RootRouter(),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,7 +161,13 @@ class _RootRouterState extends State<_RootRouter> {
       final creds = accounts.credentialsFor(activeRepo);
       if (creds != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.read<WorkflowsProvider>().load(creds);
+          context.read<WorkflowsProvider>().load(creds, repoId: activeRepo.id);
+          NotificationService.schedulePolling(
+            owner: creds.owner,
+            repo: creds.repo,
+            token: creds.token,
+            branch: creds.branch,
+          );
         });
       }
     }
@@ -164,7 +176,8 @@ class _RootRouterState extends State<_RootRouter> {
   @override
   Widget build(BuildContext context) {
     final accounts = context.select<AccountsProvider, AccountsProvider>(
-        (a) => a);
+      (a) => a,
+    );
     if (!accounts.initialized) {
       return const Scaffold(
         body: Center(
@@ -261,7 +274,8 @@ class WelcomeScreen extends StatelessWidget {
                       backgroundColor: _C.accent,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       textStyle: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
@@ -286,16 +300,22 @@ class WelcomeScreen extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: _C.border),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       textStyle: const TextStyle(
                         fontSize: 13,
                         fontFamily: 'monospace',
                       ),
                     ),
-                    icon: const Icon(Icons.person_add_outlined,
-                        size: 16, color: _C.muted),
-                    label: const Text('Añadir otra cuenta',
-                        style: TextStyle(color: _C.muted)),
+                    icon: const Icon(
+                      Icons.person_add_outlined,
+                      size: 16,
+                      color: _C.muted,
+                    ),
+                    label: const Text(
+                      'Añadir otra cuenta',
+                      style: TextStyle(color: _C.muted),
+                    ),
                   ),
                 ),
               ] else ...[
@@ -313,7 +333,8 @@ class WelcomeScreen extends StatelessWidget {
                       backgroundColor: _C.accent,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       textStyle: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
@@ -337,39 +358,42 @@ class _StepDot extends StatelessWidget {
   final bool active;
   final bool done;
   final int number;
-  const _StepDot(
-      {required this.active, required this.done, required this.number});
+  const _StepDot({
+    required this.active,
+    required this.done,
+    required this.number,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: done
-              ? _C.accent
-              : active
-                  ? _C.accentDim
-                  : _C.surfaceHi,
-          border: Border.all(
-            color: active || done ? _C.accent : _C.border,
-            width: 1.5,
-          ),
-        ),
-        child: Center(
-          child: done
-              ? const Icon(Icons.check_rounded, size: 16, color: Colors.black)
-              : Text(
-                  '$number',
-                  style: TextStyle(
-                    color: active ? _C.accent : _C.muted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-        ),
-      );
+    width: 32,
+    height: 32,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: done
+          ? _C.accent
+          : active
+          ? _C.accentDim
+          : _C.surfaceHi,
+      border: Border.all(
+        color: active || done ? _C.accent : _C.border,
+        width: 1.5,
+      ),
+    ),
+    child: Center(
+      child: done
+          ? const Icon(Icons.check_rounded, size: 16, color: Colors.black)
+          : Text(
+              '$number',
+              style: TextStyle(
+                color: active ? _C.accent : _C.muted,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'monospace',
+              ),
+            ),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -382,19 +406,22 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeRepo = context.select<AccountsProvider, GithubRepo?>(
-        (a) => a.activeRepo);
+      (a) => a.activeRepo,
+    );
     final accounts = context.select<AccountsProvider, AccountsProvider>(
-        (a) => a);
+      (a) => a,
+    );
 
     String repoLabel = 'GHA Panel';
-    String branch    = 'main';
+    String branch = 'main';
     if (activeRepo != null) {
       final acc = accounts.accounts.firstWhere(
         (a) => a.id == activeRepo.accountId,
-        orElse: () => const GithubAccount(id:'', owner:'?', token:'', label:'?'),
+        orElse: () =>
+            const GithubAccount(id: '', owner: '?', token: '', label: '?'),
       );
       repoLabel = '${acc.owner}/${activeRepo.repo}';
-      branch    = activeRepo.branch;
+      branch = activeRepo.branch;
     }
 
     return Scaffold(
@@ -464,8 +491,11 @@ class _AppDrawer extends StatelessWidget {
                   const _AppLogo(),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: _C.muted, size: 20),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: _C.muted,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -540,12 +570,10 @@ class _AppDrawer extends StatelessWidget {
             // Footer
             const Divider(height: 1),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.bolt_rounded,
-                      color: _C.accent, size: 14),
+                  const Icon(Icons.bolt_rounded, color: _C.accent, size: 14),
                   const SizedBox(width: 6),
                   const Text(
                     'GHA Panel v2.0',
@@ -573,8 +601,8 @@ class _DrawerAccountSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final accounts = context.watch<AccountsProvider>();
     final workflows = context.read<WorkflowsProvider>();
-    final repos     = accounts.reposForAccount(account.id);
-    final activeId  = accounts.activeRepo?.id;
+    final repos = accounts.reposForAccount(account.id);
+    final activeId = accounts.activeRepo?.id;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -630,8 +658,11 @@ class _DrawerAccountSection extends StatelessWidget {
               ),
               // Editar cuenta
               IconButton(
-                icon: const Icon(Icons.more_vert_rounded,
-                    size: 18, color: _C.muted),
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  size: 18,
+                  color: _C.muted,
+                ),
                 onPressed: () =>
                     _showAccountMenu(context, account, accounts, workflows),
               ),
@@ -648,7 +679,7 @@ class _DrawerAccountSection extends StatelessWidget {
               await accounts.setActiveRepo(repo);
               workflows.reset();
               final creds = accounts.credentialsFor(repo);
-              if (creds != null) workflows.load(creds);
+              if (creds != null) workflows.load(creds, repoId: repo.id);
               if (context.mounted) Navigator.pop(context);
             },
           ),
@@ -709,10 +740,19 @@ class _DrawerAccountSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             ListTile(
-              leading: const Icon(Icons.edit_outlined,
-                  color: _C.muted, size: 20),
-              title: const Text('Editar cuenta',
-                  style: TextStyle(color: _C.text, fontFamily: 'monospace', fontSize: 14)),
+              leading: const Icon(
+                Icons.edit_outlined,
+                color: _C.muted,
+                size: 20,
+              ),
+              title: const Text(
+                'Editar cuenta',
+                style: TextStyle(
+                  color: _C.text,
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 showModalBottomSheet(
@@ -724,10 +764,19 @@ class _DrawerAccountSection extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline_rounded,
-                  color: _C.danger, size: 20),
-              title: const Text('Eliminar cuenta',
-                  style: TextStyle(color: _C.danger, fontFamily: 'monospace', fontSize: 14)),
+              leading: const Icon(
+                Icons.delete_outline_rounded,
+                color: _C.danger,
+                size: 20,
+              ),
+              title: const Text(
+                'Eliminar cuenta',
+                style: TextStyle(
+                  color: _C.danger,
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                ),
+              ),
               onTap: () async {
                 Navigator.pop(context);
                 final confirm = await showDialog<bool>(
@@ -764,53 +813,50 @@ class _DrawerRepoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-        decoration: BoxDecoration(
-          color: isActive ? _C.accentDim : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive
-                ? _C.accent.withValues(alpha: 0.3)
-                : Colors.transparent,
-          ),
+    duration: const Duration(milliseconds: 200),
+    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+    decoration: BoxDecoration(
+      color: isActive ? _C.accentDim : Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color: isActive ? _C.accent.withValues(alpha: 0.3) : Colors.transparent,
+      ),
+    ),
+    child: ListTile(
+      dense: true,
+      leading: Icon(
+        Icons.folder_outlined,
+        size: 16,
+        color: isActive ? _C.accent : _C.muted,
+      ),
+      title: Text(
+        repo.label,
+        style: TextStyle(
+          color: isActive ? _C.accent : _C.text,
+          fontSize: 13,
+          fontFamily: 'monospace',
+          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
         ),
-        child: ListTile(
-          dense: true,
-          leading: Icon(
-            Icons.folder_outlined,
-            size: 16,
-            color: isActive ? _C.accent : _C.muted,
-          ),
-          title: Text(
-            repo.label,
-            style: TextStyle(
-              color: isActive ? _C.accent : _C.text,
-              fontSize: 13,
-              fontFamily: 'monospace',
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-          subtitle: Text(
-            '${repo.repo} · ${repo.branch}',
-            style: const TextStyle(
-              color: _C.textDim,
-              fontSize: 10,
-              fontFamily: 'monospace',
-            ),
-          ),
-          trailing: isActive
-              ? const Icon(Icons.check_rounded,
-                  size: 16, color: _C.accent)
-              : null,
-          onTap: onTap,
-          onLongPress: () => _showRepoMenu(context),
+      ),
+      subtitle: Text(
+        '${repo.repo} · ${repo.branch}',
+        style: const TextStyle(
+          color: _C.textDim,
+          fontSize: 10,
+          fontFamily: 'monospace',
         ),
-      );
+      ),
+      trailing: isActive
+          ? const Icon(Icons.check_rounded, size: 16, color: _C.accent)
+          : null,
+      onTap: onTap,
+      onLongPress: () => _showRepoMenu(context),
+    ),
+  );
 
   void _showRepoMenu(BuildContext context) {
-    final accounts   = context.read<AccountsProvider>();
-    final workflows  = context.read<WorkflowsProvider>();
+    final accounts = context.read<AccountsProvider>();
+    final workflows = context.read<WorkflowsProvider>();
     showModalBottomSheet(
       context: context,
       backgroundColor: _C.surface,
@@ -826,7 +872,9 @@ class _DrawerRepoTile extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                  color: _C.border, borderRadius: BorderRadius.circular(2)),
+                color: _C.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
@@ -840,36 +888,51 @@ class _DrawerRepoTile extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.edit_outlined,
-                  color: _C.muted, size: 20),
-              title: const Text('Editar repositorio',
-                  style: TextStyle(color: _C.text, fontFamily: 'monospace', fontSize: 14)),
+              leading: const Icon(
+                Icons.edit_outlined,
+                color: _C.muted,
+                size: 20,
+              ),
+              title: const Text(
+                'Editar repositorio',
+                style: TextStyle(
+                  color: _C.text,
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
-                  builder: (_) => _RepoFormSheet(
-                    accountId: repo.accountId,
-                    existing: repo,
-                  ),
+                  builder: (_) =>
+                      _RepoFormSheet(accountId: repo.accountId, existing: repo),
                 );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline_rounded,
-                  color: _C.danger, size: 20),
-              title: const Text('Eliminar repositorio',
-                  style: TextStyle(color: _C.danger, fontFamily: 'monospace', fontSize: 14)),
+              leading: const Icon(
+                Icons.delete_outline_rounded,
+                color: _C.danger,
+                size: 20,
+              ),
+              title: const Text(
+                'Eliminar repositorio',
+                style: TextStyle(
+                  color: _C.danger,
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                ),
+              ),
               onTap: () async {
                 Navigator.pop(context);
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (_) => _ConfirmDeleteDialog(
                     title: 'Eliminar repositorio',
-                    body:
-                        'Se eliminará "${repo.label}" de la configuración.',
+                    body: 'Se eliminará "${repo.label}" de la configuración.',
                   ),
                 );
                 if (confirm == true && context.mounted) {
@@ -900,17 +963,13 @@ class _DrawerActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        leading: Icon(icon, color: color, size: 20),
-        title: Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 13,
-            fontFamily: 'monospace',
-          ),
-        ),
-        onTap: onTap,
-      );
+    leading: Icon(icon, color: color, size: 20),
+    title: Text(
+      label,
+      style: TextStyle(color: color, fontSize: 13, fontFamily: 'monospace'),
+    ),
+    onTap: onTap,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -920,15 +979,15 @@ class _DrawerActionTile extends StatelessWidget {
 class _RateLimitIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final isRL    = context.select<WorkflowsProvider, bool>(
-        (w) => w.isRateLimited);
+    final isRL = context.select<WorkflowsProvider, bool>(
+      (w) => w.isRateLimited,
+    );
     final seconds = context.select<WorkflowsProvider, int?>(
-        (w) => w.rateLimitSecondsLeft);
+      (w) => w.rateLimitSecondsLeft,
+    );
     if (!isRL) return const SizedBox.shrink();
 
-    final label = seconds != null
-        ? '${_fmtSeconds(seconds)}'
-        : 'RL';
+    final label = seconds != null ? '${_fmtSeconds(seconds)}' : 'RL';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -940,8 +999,7 @@ class _RateLimitIndicator extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.hourglass_bottom_rounded,
-              size: 11, color: _C.warn),
+          const Icon(Icons.hourglass_bottom_rounded, size: 11, color: _C.warn),
           const SizedBox(width: 4),
           Text(
             label,
@@ -968,29 +1026,28 @@ class _BranchBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: _C.accentDim,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: _C.accent.withValues(alpha: 0.3)),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: _C.accentDim,
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: _C.accent.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.account_tree_outlined, size: 11, color: _C.accent),
+        const SizedBox(width: 4),
+        Text(
+          branch,
+          style: const TextStyle(
+            color: _C.accent,
+            fontSize: 11,
+            fontFamily: 'monospace',
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.account_tree_outlined,
-                size: 11, color: _C.accent),
-            const SizedBox(width: 4),
-            Text(
-              branch,
-              style: const TextStyle(
-                color: _C.accent,
-                fontSize: 11,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1001,24 +1058,32 @@ class _DashboardBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accounts = context.select<AccountsProvider, AccountsProvider>(
-        (a) => a);
-    final creds    = accounts.activeCredentials;
+      (a) => a,
+    );
+    final creds = accounts.activeCredentials;
 
-    final initState  = context.select<WorkflowsProvider, InitState>(
-        (w) => w.initState);
+    final initState = context.select<WorkflowsProvider, InitState>(
+      (w) => w.initState,
+    );
     final rateLimited = context.select<WorkflowsProvider, bool>(
-        (w) => w.isRateLimited);
+      (w) => w.isRateLimited,
+    );
     final error = context.select<WorkflowsProvider, String?>((w) => w.error);
 
     Widget body;
     if (initState == InitState.loading) {
       body = const _LoadingView();
     } else if (initState == InitState.error) {
+      final activeRepo = accounts.activeRepo;
       body = _ErrorView(
         message: error ?? 'Error desconocido.',
         isRateLimit: rateLimited,
-        onRetry:
-            creds != null ? () => context.read<WorkflowsProvider>().load(creds) : null,
+        onRetry: creds != null && activeRepo != null
+            ? () => context.read<WorkflowsProvider>().load(
+                creds,
+                repoId: activeRepo.id,
+              )
+            : null,
       );
     } else {
       body = _WorkflowList(creds: creds);
@@ -1049,13 +1114,16 @@ class _WorkflowList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final workflows = context.select<WorkflowsProvider, List<Workflow>>(
-        (w) => w.workflows);
+      (w) => w.workflows,
+    );
 
     if (workflows.isEmpty) {
-      return ListView(children: [
-        SizedBox(height: MediaQuery.sizeOf(context).height * 0.28),
-        const _EmptyView(),
-      ]);
+      return ListView(
+        children: [
+          SizedBox(height: MediaQuery.sizeOf(context).height * 0.28),
+          const _EmptyView(),
+        ],
+      );
     }
 
     return ListView.separated(
@@ -1105,10 +1173,7 @@ class _WorkflowList extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _WorkflowInputsSheet(
-        workflow: wf,
-        creds: creds,
-      ),
+      builder: (_) => _WorkflowInputsSheet(workflow: wf, creds: creds),
     );
   }
 }
@@ -1180,7 +1245,11 @@ class _WorkflowCardState extends State<_WorkflowCard> {
     }
     final run = widget.run;
     if (run == null) {
-      return (color: _C.textDim, icon: Icons.circle_outlined, label: 'Sin runs');
+      return (
+        color: _C.textDim,
+        icon: Icons.circle_outlined,
+        label: 'Sin runs',
+      );
     }
     if (run.isRunning) {
       return (
@@ -1190,18 +1259,38 @@ class _WorkflowCardState extends State<_WorkflowCard> {
       );
     }
     return switch (run.conclusion) {
-      'success'   => (color: _C.accent, icon: Icons.check_circle_outline_rounded, label: 'Exitoso'),
-      'failure'   => (color: _C.danger, icon: Icons.cancel_outlined, label: 'Fallido'),
-      'cancelled' => (color: _C.muted, icon: Icons.remove_circle_outline_rounded, label: 'Cancelado'),
-      'skipped'   => (color: _C.textDim, icon: Icons.skip_next_outlined, label: 'Omitido'),
-      _           => (color: _C.textDim, icon: Icons.help_outline_rounded, label: run.conclusion ?? '—'),
+      'success' => (
+        color: _C.accent,
+        icon: Icons.check_circle_outline_rounded,
+        label: 'Exitoso',
+      ),
+      'failure' => (
+        color: _C.danger,
+        icon: Icons.cancel_outlined,
+        label: 'Fallido',
+      ),
+      'cancelled' => (
+        color: _C.muted,
+        icon: Icons.remove_circle_outline_rounded,
+        label: 'Cancelado',
+      ),
+      'skipped' => (
+        color: _C.textDim,
+        icon: Icons.skip_next_outlined,
+        label: 'Omitido',
+      ),
+      _ => (
+        color: _C.textDim,
+        icon: Icons.help_outline_rounded,
+        label: run.conclusion ?? '—',
+      ),
     };
   }
 
   @override
   Widget build(BuildContext context) {
     final meta = _runMeta();
-    final run  = widget.run;
+    final run = widget.run;
 
     return Container(
       decoration: BoxDecoration(
@@ -1254,8 +1343,7 @@ class _WorkflowCardState extends State<_WorkflowCard> {
 
           // Estado del run
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
               color: _C.bg,
               borderRadius: BorderRadius.circular(8),
@@ -1304,17 +1392,18 @@ class _WorkflowCardState extends State<_WorkflowCard> {
             width: double.infinity,
             height: 40,
             child: FilledButton.icon(
-              onPressed:
-                  (widget.dispatching || widget.onDispatch == null)
-                      ? null
-                      : widget.onDispatch,
+              onPressed: (widget.dispatching || widget.onDispatch == null)
+                  ? null
+                  : widget.onDispatch,
               style: FilledButton.styleFrom(
-                backgroundColor:
-                    widget.dispatching ? _C.surfaceHi : _C.accentDim,
+                backgroundColor: widget.dispatching
+                    ? _C.surfaceHi
+                    : _C.accentDim,
                 foregroundColor: _C.accent,
                 disabledForegroundColor: _C.muted,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 side: BorderSide(
                   color: widget.dispatching
                       ? _C.border
@@ -1332,7 +1421,9 @@ class _WorkflowCardState extends State<_WorkflowCard> {
                       width: 13,
                       height: 13,
                       child: CircularProgressIndicator(
-                          strokeWidth: 1.5, color: _C.muted),
+                        strokeWidth: 1.5,
+                        color: _C.muted,
+                      ),
                     )
                   : const Icon(Icons.play_arrow_rounded, size: 16),
               label: Text(widget.dispatching ? 'EJECUTANDO…' : 'EJECUTAR'),
@@ -1352,14 +1443,10 @@ class _WorkflowInputsSheet extends StatefulWidget {
   final Workflow workflow;
   final GithubCredentials creds;
 
-  const _WorkflowInputsSheet({
-    required this.workflow,
-    required this.creds,
-  });
+  const _WorkflowInputsSheet({required this.workflow, required this.creds});
 
   @override
-  State<_WorkflowInputsSheet> createState() =>
-      _WorkflowInputsSheetState();
+  State<_WorkflowInputsSheet> createState() => _WorkflowInputsSheetState();
 }
 
 class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
@@ -1377,8 +1464,9 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
         _choiceValues[input.key] =
             input.defaultValue ?? (input.options?.first ?? '');
       } else {
-        _controllers[input.key] =
-            TextEditingController(text: input.defaultValue ?? '');
+        _controllers[input.key] = TextEditingController(
+          text: input.defaultValue ?? '',
+        );
       }
     }
   }
@@ -1424,14 +1512,15 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                  color: _C.border, borderRadius: BorderRadius.circular(2)),
+                color: _C.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  const Icon(Icons.tune_rounded,
-                      color: _C.warn, size: 18),
+                  const Icon(Icons.tune_rounded, color: _C.warn, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1445,8 +1534,11 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: _C.muted, size: 20),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: _C.muted,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -1462,8 +1554,7 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
                     _buildInputWidget(input),
                   const SizedBox(height: 16),
                   Selector<WorkflowsProvider, bool>(
-                    selector: (_, p) =>
-                        p.isDispatching(widget.workflow.id),
+                    selector: (_, p) => p.isDispatching(widget.workflow.id),
                     builder: (context, dispatching, _) => SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -1493,7 +1584,8 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
                           backgroundColor: _C.accent,
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
@@ -1532,9 +1624,10 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
                 ),
               ),
               if (input.required)
-                const Text(' *',
-                    style:
-                        TextStyle(color: _C.danger, fontFamily: 'monospace')),
+                const Text(
+                  ' *',
+                  style: TextStyle(color: _C.danger, fontFamily: 'monospace'),
+                ),
             ],
           ),
           if (input.description.isNotEmpty)
@@ -1554,8 +1647,7 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
           if (input.type == 'boolean')
             _BoolToggle(
               value: _boolValues[input.key] ?? false,
-              onChanged: (v) =>
-                  setState(() => _boolValues[input.key] = v),
+              onChanged: (v) => setState(() => _boolValues[input.key] = v),
             )
           else if (input.type == 'choice' &&
               input.options != null &&
@@ -1563,8 +1655,7 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
             _ChoiceDropdown(
               value: _choiceValues[input.key] ?? input.options!.first,
               options: input.options!,
-              onChanged: (v) =>
-                  setState(() => _choiceValues[input.key] = v),
+              onChanged: (v) => setState(() => _choiceValues[input.key] = v),
             )
           else
             TextFormField(
@@ -1574,9 +1665,7 @@ class _WorkflowInputsSheetState extends State<_WorkflowInputsSheet> {
                 fontSize: 13,
                 fontFamily: 'monospace',
               ),
-              decoration: InputDecoration(
-                hintText: input.defaultValue ?? '',
-              ),
+              decoration: InputDecoration(hintText: input.defaultValue ?? ''),
             ),
         ],
       ),
@@ -1591,77 +1680,76 @@ class _BoolToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () => onChanged(!value),
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: value ? _C.accentDim : _C.surfaceHi,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color:
-                  value ? _C.accent.withValues(alpha: 0.5) : _C.border,
+    onTap: () => onChanged(!value),
+    child: Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: value ? _C.accentDim : _C.surfaceHi,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: value ? _C.accent.withValues(alpha: 0.5) : _C.border,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            value ? Icons.toggle_on_rounded : Icons.toggle_off_rounded,
+            color: value ? _C.accent : _C.muted,
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            value ? 'true' : 'false',
+            style: TextStyle(
+              color: value ? _C.accent : _C.muted,
+              fontSize: 13,
+              fontFamily: 'monospace',
             ),
           ),
-          child: Row(
-            children: [
-              Icon(
-                value ? Icons.toggle_on_rounded : Icons.toggle_off_rounded,
-                color: value ? _C.accent : _C.muted,
-                size: 22,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                value ? 'true' : 'false',
-                style: TextStyle(
-                  color: value ? _C.accent : _C.muted,
-                  fontSize: 13,
-                  fontFamily: 'monospace',
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 class _ChoiceDropdown extends StatelessWidget {
   final String value;
   final List<String> options;
   final ValueChanged<String> onChanged;
-  const _ChoiceDropdown(
-      {required this.value,
-      required this.options,
-      required this.onChanged});
+  const _ChoiceDropdown({
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: _C.surfaceHi,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _C.border),
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    decoration: BoxDecoration(
+      color: _C.surfaceHi,
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: _C.border),
+    ),
+    child: DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: value,
+        isExpanded: true,
+        dropdownColor: _C.surfaceHi2,
+        style: const TextStyle(
+          color: _C.text,
+          fontSize: 13,
+          fontFamily: 'monospace',
         ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: value,
-            isExpanded: true,
-            dropdownColor: _C.surfaceHi2,
-            style: const TextStyle(
-              color: _C.text,
-              fontSize: 13,
-              fontFamily: 'monospace',
-            ),
-            items: options
-                .map((o) =>
-                    DropdownMenuItem(value: o, child: Text(o)))
-                .toList(),
-            onChanged: (v) {
-              if (v != null) onChanged(v);
-            },
-          ),
-        ),
-      );
+        items: options
+            .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+            .toList(),
+        onChanged: (v) {
+          if (v != null) onChanged(v);
+        },
+      ),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1677,8 +1765,10 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configuración',
-            style: TextStyle(fontFamily: 'monospace', fontSize: 15)),
+        title: const Text(
+          'Configuración',
+          style: TextStyle(fontFamily: 'monospace', fontSize: 15),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
@@ -1736,9 +1826,9 @@ class _AccountSettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accounts  = context.read<AccountsProvider>();
+    final accounts = context.read<AccountsProvider>();
     final workflows = context.read<WorkflowsProvider>();
-    final repos     = accounts.reposForAccount(account.id);
+    final repos = accounts.reposForAccount(account.id);
 
     return ExpansionTile(
       leading: Container(
@@ -1783,8 +1873,11 @@ class _AccountSettingsTile extends StatelessWidget {
         for (final repo in repos)
           ListTile(
             contentPadding: const EdgeInsets.fromLTRB(24, 0, 16, 0),
-            leading: const Icon(Icons.folder_outlined,
-                size: 16, color: _C.muted),
+            leading: const Icon(
+              Icons.folder_outlined,
+              size: 16,
+              color: _C.muted,
+            ),
             title: Text(
               repo.label,
               style: const TextStyle(
@@ -1805,21 +1898,25 @@ class _AccountSettingsTile extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined,
-                      size: 16, color: _C.muted),
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    size: 16,
+                    color: _C.muted,
+                  ),
                   onPressed: () => showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (_) => _RepoFormSheet(
-                      accountId: account.id,
-                      existing: repo,
-                    ),
+                    builder: (_) =>
+                        _RepoFormSheet(accountId: account.id, existing: repo),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded,
-                      size: 16, color: _C.danger),
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 16,
+                    color: _C.danger,
+                  ),
                   onPressed: () async {
                     final ok = await showDialog<bool>(
                       context: context,
@@ -1847,11 +1944,15 @@ class _AccountSettingsTile extends StatelessWidget {
               backgroundColor: Colors.transparent,
               builder: (_) => _RepoFormSheet(accountId: account.id),
             ),
-            icon: const Icon(Icons.add_rounded,
-                size: 14, color: _C.blue),
-            label: const Text('Añadir repositorio',
-                style: TextStyle(
-                    color: _C.blue, fontSize: 12, fontFamily: 'monospace')),
+            icon: const Icon(Icons.add_rounded, size: 14, color: _C.blue),
+            label: const Text(
+              'Añadir repositorio',
+              style: TextStyle(
+                color: _C.blue,
+                fontSize: 12,
+                fontFamily: 'monospace',
+              ),
+            ),
             style: TextButton.styleFrom(padding: EdgeInsets.zero),
           ),
         ),
@@ -1868,13 +1969,19 @@ class _AccountSettingsTile extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   builder: (_) => _AccountFormSheet(existing: account),
                 ),
-                icon: const Icon(Icons.edit_outlined,
-                    size: 14, color: _C.muted),
-                label: const Text('Editar cuenta',
-                    style: TextStyle(
-                        color: _C.muted,
-                        fontSize: 12,
-                        fontFamily: 'monospace')),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 14,
+                  color: _C.muted,
+                ),
+                label: const Text(
+                  'Editar cuenta',
+                  style: TextStyle(
+                    color: _C.muted,
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  ),
+                ),
                 style: TextButton.styleFrom(padding: EdgeInsets.zero),
               ),
               const SizedBox(width: 16),
@@ -1892,13 +1999,19 @@ class _AccountSettingsTile extends StatelessWidget {
                     await accounts.deleteAccount(account.id, workflows);
                   }
                 },
-                icon: const Icon(Icons.delete_outline_rounded,
-                    size: 14, color: _C.danger),
-                label: const Text('Eliminar',
-                    style: TextStyle(
-                        color: _C.danger,
-                        fontSize: 12,
-                        fontFamily: 'monospace')),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 14,
+                  color: _C.danger,
+                ),
+                label: const Text(
+                  'Eliminar',
+                  style: TextStyle(
+                    color: _C.danger,
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  ),
+                ),
                 style: TextButton.styleFrom(padding: EdgeInsets.zero),
               ),
             ],
@@ -1915,18 +2028,18 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: _C.muted,
-            fontSize: 10,
-            letterSpacing: 2,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'monospace',
-          ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: _C.muted,
+        fontSize: 10,
+        letterSpacing: 2,
+        fontWeight: FontWeight.w600,
+        fontFamily: 'monospace',
+      ),
+    ),
+  );
 }
 
 class _SettingsActionTile extends StatelessWidget {
@@ -1934,39 +2047,54 @@ class _SettingsActionTile extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
-  const _SettingsActionTile(
-      {required this.icon,
-      required this.label,
-      required this.color,
-      required this.onTap});
+  const _SettingsActionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) => ListTile(
-        leading: Icon(icon, color: color, size: 20),
-        title: Text(label,
-            style: TextStyle(
-                color: color, fontSize: 14, fontFamily: 'monospace')),
-        onTap: onTap,
-      );
+    leading: Icon(icon, color: color, size: 20),
+    title: Text(
+      label,
+      style: TextStyle(color: color, fontSize: 14, fontFamily: 'monospace'),
+    ),
+    onTap: onTap,
+  );
 }
 
 class _SettingsInfoTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _SettingsInfoTile(
-      {required this.icon, required this.label, required this.value});
+  const _SettingsInfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) => ListTile(
-        leading: Icon(icon, color: _C.muted, size: 20),
-        title: Text(label,
-            style: const TextStyle(
-                color: _C.text, fontSize: 14, fontFamily: 'monospace')),
-        trailing: Text(value,
-            style: const TextStyle(
-                color: _C.muted, fontSize: 12, fontFamily: 'monospace')),
-      );
+    leading: Icon(icon, color: _C.muted, size: 20),
+    title: Text(
+      label,
+      style: const TextStyle(
+        color: _C.text,
+        fontSize: 14,
+        fontFamily: 'monospace',
+      ),
+    ),
+    trailing: Text(
+      value,
+      style: const TextStyle(
+        color: _C.muted,
+        fontSize: 12,
+        fontFamily: 'monospace',
+      ),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1982,13 +2110,16 @@ class _AccountFormSheet extends StatefulWidget {
 }
 
 class _AccountFormSheetState extends State<_AccountFormSheet> {
-  final _formKey     = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   late final _ownerCtrl = TextEditingController(
-      text: widget.existing?.owner ?? '');
+    text: widget.existing?.owner ?? '',
+  );
   late final _tokenCtrl = TextEditingController(
-      text: widget.existing?.token ?? '');
+    text: widget.existing?.token ?? '',
+  );
   late final _labelCtrl = TextEditingController(
-      text: widget.existing?.label ?? '');
+    text: widget.existing?.label ?? '',
+  );
   bool _obscureToken = true;
 
   @override
@@ -2003,34 +2134,41 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
     if (!_formKey.currentState!.validate()) return;
     final isNew = widget.existing == null;
     final err = await context.read<AccountsProvider>().saveAccount(
-          existingId: widget.existing?.id,
-          owner: _ownerCtrl.text,
-          token: _tokenCtrl.text,
-          label: _labelCtrl.text,
-        );
+      existingId: widget.existing?.id,
+      owner: _ownerCtrl.text,
+      token: _tokenCtrl.text,
+      label: _labelCtrl.text,
+    );
     if (!mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(_buildSnack(err, isError: true));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(_buildSnack(err, isError: true));
     } else {
-      final savedAccountId =
-          context.read<AccountsProvider>().lastSavedAccountId;
+      final savedAccountId = context
+          .read<AccountsProvider>()
+          .lastSavedAccountId;
       Navigator.pop(context);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnack(isNew
-            ? '✓ Cuenta añadida. Ahora añade un repositorio.'
-            : '✓ Cuenta actualizada.'),
+        _buildSnack(
+          isNew
+              ? '✓ Cuenta añadida. Ahora añade un repositorio.'
+              : '✓ Cuenta actualizada.',
+        ),
       );
-      // Si es cuenta nueva, abrir inmediatamente el sheet de añadir repo
+      // Si es cuenta nueva, abrir inmediatamente el sheet de repo picker
       if (isNew && savedAccountId != null) {
         await Future.delayed(const Duration(milliseconds: 350));
         if (!mounted) return;
+        final account = context.read<AccountsProvider>().accounts.firstWhere(
+          (a) => a.id == savedAccountId,
+        );
         await showModalBottomSheet(
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (_) => _RepoFormSheet(accountId: savedAccountId),
+          builder: (_) => _RepoPickerSheet(account: account),
         );
       }
     }
@@ -2038,9 +2176,10 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isEditing   = widget.existing != null;
-    final validating  = context.select<AccountsProvider, bool>(
-        (a) => a.isValidating);
+    final isEditing = widget.existing != null;
+    final validating = context.select<AccountsProvider, bool>(
+      (a) => a.isValidating,
+    );
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -2059,14 +2198,19 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                  color: _C.border, borderRadius: BorderRadius.circular(2)),
+                color: _C.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
               child: Row(
                 children: [
-                  const Icon(Icons.person_outline_rounded,
-                      color: _C.accent, size: 20),
+                  const Icon(
+                    Icons.person_outline_rounded,
+                    color: _C.accent,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     isEditing ? 'Editar cuenta' : 'Nueva cuenta',
@@ -2079,8 +2223,11 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: _C.muted, size: 20),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: _C.muted,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -2124,8 +2271,11 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
                         decoration: InputDecoration(
                           labelText: 'Personal Access Token',
                           hintText: 'ghp_…',
-                          prefixIcon: const Icon(Icons.key_outlined,
-                              color: _C.muted, size: 18),
+                          prefixIcon: const Icon(
+                            Icons.key_outlined,
+                            color: _C.muted,
+                            size: 18,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureToken
@@ -2134,8 +2284,8 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
                               color: _C.muted,
                               size: 18,
                             ),
-                            onPressed: () => setState(
-                                () => _obscureToken = !_obscureToken),
+                            onPressed: () =>
+                                setState(() => _obscureToken = !_obscureToken),
                           ),
                         ),
                         validator: (v) {
@@ -2152,13 +2302,15 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.lock_outline_rounded,
-                              size: 12, color: _C.textDim),
+                          const Icon(
+                            Icons.lock_outline_rounded,
+                            size: 12,
+                            color: _C.textDim,
+                          ),
                           const SizedBox(width: 6),
                           const Text(
                             'Cifrado en el dispositivo.',
-                            style:
-                                TextStyle(color: _C.textDim, fontSize: 11),
+                            style: TextStyle(color: _C.textDim, fontSize: 11),
                           ),
                         ],
                       ),
@@ -2173,7 +2325,8 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
                             foregroundColor: Colors.black,
                             disabledBackgroundColor: _C.surfaceHi,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             textStyle: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
@@ -2182,23 +2335,28 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
                           ),
                           child: validating
                               ? const Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     SizedBox(
                                       width: 16,
                                       height: 16,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2, color: _C.muted),
+                                        strokeWidth: 2,
+                                        color: _C.muted,
+                                      ),
                                     ),
                                     SizedBox(width: 10),
-                                    Text('VALIDANDO TOKEN…',
-                                        style: TextStyle(color: _C.muted)),
+                                    Text(
+                                      'VALIDANDO TOKEN…',
+                                      style: TextStyle(color: _C.muted),
+                                    ),
                                   ],
                                 )
-                              : Text(isEditing
-                                  ? 'GUARDAR CAMBIOS'
-                                  : 'AÑADIR CUENTA'),
+                              : Text(
+                                  isEditing
+                                      ? 'GUARDAR CAMBIOS'
+                                      : 'AÑADIR CUENTA',
+                                ),
                         ),
                       ),
                     ],
@@ -2231,13 +2389,16 @@ class _RepoFormSheet extends StatefulWidget {
 }
 
 class _RepoFormSheetState extends State<_RepoFormSheet> {
-  final _formKey   = GlobalKey<FormState>();
-  late final _repoCtrl   = TextEditingController(
-      text: widget.existing?.repo ?? '');
+  final _formKey = GlobalKey<FormState>();
+  late final _repoCtrl = TextEditingController(
+    text: widget.existing?.repo ?? '',
+  );
   late final _branchCtrl = TextEditingController(
-      text: widget.existing?.branch ?? 'main');
-  late final _labelCtrl  = TextEditingController(
-      text: widget.existing?.label ?? '');
+    text: widget.existing?.branch ?? 'main',
+  );
+  late final _labelCtrl = TextEditingController(
+    text: widget.existing?.label ?? '',
+  );
 
   @override
   void dispose() {
@@ -2250,31 +2411,35 @@ class _RepoFormSheetState extends State<_RepoFormSheet> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final err = await context.read<AccountsProvider>().saveRepo(
-          existingId: widget.existing?.id,
-          accountId: widget.accountId,
-          repoName: _repoCtrl.text,
-          branch: _branchCtrl.text,
-          label: _labelCtrl.text,
-        );
+      existingId: widget.existing?.id,
+      accountId: widget.accountId,
+      repoName: _repoCtrl.text,
+      branch: _branchCtrl.text,
+      label: _labelCtrl.text,
+    );
     if (!mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(_buildSnack(err, isError: true));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(_buildSnack(err, isError: true));
     } else {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnack(widget.existing == null
-            ? '✓ Repositorio añadido.'
-            : '✓ Repositorio actualizado.'),
+        _buildSnack(
+          widget.existing == null
+              ? '✓ Repositorio añadido.'
+              : '✓ Repositorio actualizado.',
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isEditing  = widget.existing != null;
+    final isEditing = widget.existing != null;
     final validating = context.select<AccountsProvider, bool>(
-        (a) => a.isValidating);
+      (a) => a.isValidating,
+    );
 
     // Nombre de cuenta padre
     final accounts = context.read<AccountsProvider>();
@@ -2301,14 +2466,15 @@ class _RepoFormSheetState extends State<_RepoFormSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                  color: _C.border, borderRadius: BorderRadius.circular(2)),
+                color: _C.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
               child: Row(
                 children: [
-                  const Icon(Icons.folder_outlined,
-                      color: _C.blue, size: 20),
+                  const Icon(Icons.folder_outlined, color: _C.blue, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -2337,8 +2503,11 @@ class _RepoFormSheetState extends State<_RepoFormSheet> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: _C.muted, size: 20),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: _C.muted,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -2387,7 +2556,8 @@ class _RepoFormSheetState extends State<_RepoFormSheet> {
                             foregroundColor: Colors.white,
                             disabledBackgroundColor: _C.surfaceHi,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             textStyle: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
@@ -2396,25 +2566,28 @@ class _RepoFormSheetState extends State<_RepoFormSheet> {
                           ),
                           child: validating
                               ? const Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     SizedBox(
                                       width: 16,
                                       height: 16,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white70),
+                                        strokeWidth: 2,
+                                        color: Colors.white70,
+                                      ),
                                     ),
                                     SizedBox(width: 10),
-                                    Text('VERIFICANDO…',
-                                        style: TextStyle(
-                                            color: Colors.white70)),
+                                    Text(
+                                      'VERIFICANDO…',
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
                                   ],
                                 )
-                              : Text(isEditing
-                                  ? 'GUARDAR CAMBIOS'
-                                  : 'AÑADIR REPOSITORIO'),
+                              : Text(
+                                  isEditing
+                                      ? 'GUARDAR CAMBIOS'
+                                      : 'AÑADIR REPOSITORIO',
+                                ),
                         ),
                       ),
                     ],
@@ -2433,6 +2606,401 @@ class _RepoFormSheetState extends State<_RepoFormSheet> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// REPO PICKER SHEET — Fase 3: Onboarding sin fricción
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RepoPickerSheet extends StatefulWidget {
+  final GithubAccount account;
+  const _RepoPickerSheet({required this.account});
+
+  @override
+  State<_RepoPickerSheet> createState() => _RepoPickerSheetState();
+}
+
+class _RepoPickerSheetState extends State<_RepoPickerSheet> {
+  List<String>? _repos;
+  List<String> _branches = [];
+  String? _selectedRepo;
+  String? _selectedBranch;
+  bool _loadingBranches = false;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRepos();
+  }
+
+  Future<void> _loadRepos() async {
+    setState(() {
+      _repos = null;
+      _error = null;
+    });
+    try {
+      final repos = await context.read<AccountsProvider>().getUserRepos(
+        widget.account.token,
+      );
+      if (!mounted) return;
+      setState(() => _repos = repos);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _repos = [];
+        _error = 'Error al cargar repos: $e';
+      });
+    }
+  }
+
+  Future<void> _onRepoSelected(String fullName) async {
+    setState(() {
+      _selectedRepo = fullName;
+      _selectedBranch = null;
+      _branches = [];
+      _loadingBranches = true;
+    });
+    try {
+      final parts = fullName.split('/');
+      final branches = await context.read<AccountsProvider>().getRepoBranches(
+        parts[0],
+        parts[1],
+        widget.account.token,
+      );
+      if (!mounted) return;
+      setState(() {
+        _branches = branches;
+        _selectedBranch = branches.contains('main')
+            ? 'main'
+            : branches.firstOrNull;
+        _loadingBranches = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _branches = ['main'];
+        _selectedBranch = 'main';
+        _loadingBranches = false;
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    if (_selectedRepo == null || _selectedBranch == null) return;
+    setState(() => _saving = true);
+    final parts = _selectedRepo!.split('/');
+    final err = await context.read<AccountsProvider>().saveRepo(
+      accountId: widget.account.id,
+      repoName: parts[1],
+      branch: _selectedBranch!,
+      label: '',
+    );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (err != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(_buildSnack(err, isError: true));
+    } else {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(_buildSnack('✓ Repositorio añadido.'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      expand: false,
+      builder: (_, sc) => Container(
+        decoration: const BoxDecoration(
+          color: _C.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            const SizedBox(height: 8),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: _C.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.folder_open_rounded,
+                    color: _C.accent,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Selecciona un repositorio',
+                          style: TextStyle(
+                            color: _C.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        Text(
+                          '@${widget.account.owner}',
+                          style: const TextStyle(
+                            color: _C.muted,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: _C.muted,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 20),
+
+            // Cuerpo: loading / error / lista
+            Expanded(
+              child: _repos == null
+                  // Cargando
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: _C.accent,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Cargando tus repos…',
+                            style: TextStyle(
+                              color: _C.muted,
+                              fontSize: 12,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  // Error
+                  : _error != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.wifi_off_rounded,
+                              color: _C.danger,
+                              size: 32,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: _C.muted,
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: _loadRepos,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: _C.accent),
+                              ),
+                              child: const Text(
+                                'Reintentar',
+                                style: TextStyle(color: _C.accent),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  // Lista de repos
+                  : ListView.builder(
+                      controller: sc,
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 120),
+                      itemCount: _repos!.length,
+                      itemBuilder: (_, i) {
+                        final r = _repos![i];
+                        final selected = r == _selectedRepo;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          margin: const EdgeInsets.symmetric(vertical: 3),
+                          decoration: BoxDecoration(
+                            color: selected ? _C.accentDim : _C.bg,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: selected
+                                  ? _C.accent.withValues(alpha: 0.5)
+                                  : _C.border,
+                            ),
+                          ),
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.folder_outlined,
+                              size: 18,
+                              color: selected ? _C.accent : _C.muted,
+                            ),
+                            title: Text(
+                              r,
+                              style: TextStyle(
+                                color: selected ? _C.accent : _C.text,
+                                fontSize: 13,
+                                fontFamily: 'monospace',
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            trailing: selected
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    size: 16,
+                                    color: _C.accent,
+                                  )
+                                : null,
+                            onTap: () => _onRepoSelected(r),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            // Panel inferior: branch picker + botón guardar
+            if (_selectedRepo != null)
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                decoration: const BoxDecoration(
+                  color: _C.surfaceHi,
+                  border: Border(top: BorderSide(color: _C.border)),
+                ),
+                child: Column(
+                  children: [
+                    if (_loadingBranches)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: _C.accent,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Cargando branches…',
+                              style: TextStyle(
+                                color: _C.muted,
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (_branches.isNotEmpty)
+                      DropdownButtonFormField<String>(
+                        value: _selectedBranch,
+                        dropdownColor: _C.surface,
+                        style: const TextStyle(
+                          color: _C.text,
+                          fontFamily: 'monospace',
+                          fontSize: 13,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Branch de dispatch',
+                          prefixIcon: Icon(
+                            Icons.account_tree_outlined,
+                            size: 16,
+                            color: _C.muted,
+                          ),
+                        ),
+                        items: _branches
+                            .map(
+                              (b) => DropdownMenuItem(value: b, child: Text(b)),
+                            )
+                            .toList(),
+                        onChanged: (v) => setState(() => _selectedBranch = v),
+                      ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: (_saving || _selectedBranch == null)
+                            ? null
+                            : _save,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _C.accent,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.black54,
+                                ),
+                              )
+                            : const Text(
+                                'AÑADIR REPOSITORIO',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'monospace',
+                                  fontSize: 13,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // VISTAS AUXILIARES
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2441,28 +3009,27 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: _C.accent),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Cargando workflows…',
-              style: TextStyle(
-                color: _C.muted,
-                fontSize: 12,
-                fontFamily: 'monospace',
-                letterSpacing: 0.4,
-              ),
-            ),
-          ],
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2, color: _C.accent),
         ),
-      );
+        SizedBox(height: 16),
+        Text(
+          'Cargando workflows…',
+          style: TextStyle(
+            color: _C.muted,
+            fontSize: 12,
+            fontFamily: 'monospace',
+            letterSpacing: 0.4,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ErrorView extends StatelessWidget {
@@ -2478,78 +3045,82 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-        children: [
-          SizedBox(height: MediaQuery.sizeOf(context).height * 0.25),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isRateLimit
-                        ? Icons.hourglass_empty_rounded
-                        : Icons.wifi_off_rounded,
-                    color: isRateLimit ? _C.warn : _C.danger,
-                    size: 36,
+    children: [
+      SizedBox(height: MediaQuery.sizeOf(context).height * 0.25),
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isRateLimit
+                    ? Icons.hourglass_empty_rounded
+                    : Icons.wifi_off_rounded,
+                color: isRateLimit ? _C.warn : _C.danger,
+                size: 36,
+              ),
+              const SizedBox(height: 14),
+              // FIX #5 — countdown en la vista de error también
+              if (isRateLimit)
+                Selector<WorkflowsProvider, int?>(
+                  selector: (_, w) => w.rateLimitSecondsLeft,
+                  builder: (_, seconds, __) => Column(
+                    children: [
+                      if (seconds != null)
+                        Text(
+                          'Disponible en: ${_fmtSeconds(seconds)}',
+                          style: const TextStyle(
+                            color: _C.warn,
+                            fontSize: 18,
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                  const SizedBox(height: 14),
-                  // FIX #5 — countdown en la vista de error también
-                  if (isRateLimit)
-                    Selector<WorkflowsProvider, int?>(
-                      selector: (_, w) => w.rateLimitSecondsLeft,
-                      builder: (_, seconds, __) => Column(
-                        children: [
-                          if (seconds != null)
-                            Text(
-                              'Disponible en: ${_fmtSeconds(seconds)}',
-                              style: const TextStyle(
-                                color: _C.warn,
-                                fontSize: 18,
-                                fontFamily: 'monospace',
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: _C.muted,
+                ),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: _C.muted,
+                  fontSize: 13,
+                  fontFamily: 'monospace',
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              if (!isRateLimit && onRetry != null)
+                OutlinedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(
+                    Icons.refresh_rounded,
+                    size: 16,
+                    color: _C.accent,
+                  ),
+                  label: const Text(
+                    'Reintentar',
+                    style: TextStyle(
+                      color: _C.accent,
                       fontSize: 13,
                       fontFamily: 'monospace',
-                      height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  if (!isRateLimit && onRetry != null)
-                    OutlinedButton.icon(
-                      onPressed: onRetry,
-                      icon: const Icon(Icons.refresh_rounded,
-                          size: 16, color: _C.accent),
-                      label: const Text(
-                        'Reintentar',
-                        style: TextStyle(
-                          color: _C.accent,
-                          fontSize: 13,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: _C.accent),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: _C.accent),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                ],
-              ),
-            ),
+                  ),
+                ),
+            ],
           ),
-        ],
-      );
+        ),
+      ),
+    ],
+  );
 
   String _fmtSeconds(int s) {
     if (s >= 60) return '${s ~/ 60}m ${s % 60}s';
@@ -2562,32 +3133,32 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.inbox_outlined, color: _C.textDim, size: 38),
-            SizedBox(height: 14),
-            Text(
-              'Sin workflows activos',
-              style: TextStyle(
-                color: _C.muted,
-                fontSize: 14,
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              'Crea un workflow en tu repositorio.',
-              style: TextStyle(
-                color: _C.textDim,
-                fontSize: 12,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.inbox_outlined, color: _C.textDim, size: 38),
+        SizedBox(height: 14),
+        Text(
+          'Sin workflows activos',
+          style: TextStyle(
+            color: _C.muted,
+            fontSize: 14,
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w500,
+          ),
         ),
-      );
+        SizedBox(height: 6),
+        Text(
+          'Crea un workflow en tu repositorio.',
+          style: TextStyle(
+            color: _C.textDim,
+            fontSize: 12,
+            fontFamily: 'monospace',
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2609,10 +3180,10 @@ class _ArtifactsScreenState extends State<ArtifactsScreen> {
   }
 
   void _load() {
-    final accounts  = context.read<AccountsProvider>();
+    final accounts = context.read<AccountsProvider>();
     final workflows = context.read<WorkflowsProvider>();
-    final arts      = context.read<ArtifactsProvider>();
-    final creds     = accounts.activeCredentials;
+    final arts = context.read<ArtifactsProvider>();
+    final creds = accounts.activeCredentials;
     if (creds == null) return;
     arts.load(creds, workflows.workflows);
   }
@@ -2620,34 +3191,44 @@ class _ArtifactsScreenState extends State<ArtifactsScreen> {
   @override
   Widget build(BuildContext context) {
     final accounts = context.watch<AccountsProvider>();
-    final arts     = context.watch<ArtifactsProvider>();
-    final creds    = accounts.activeCredentials;
+    final arts = context.watch<ArtifactsProvider>();
+    final creds = accounts.activeCredentials;
 
     return Scaffold(
       backgroundColor: _C.bg,
       appBar: AppBar(
-        title: const Text('Artefactos',
-            style: TextStyle(
-                color: _C.text,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'monospace')),
+        title: const Text(
+          'Artefactos',
+          style: TextStyle(
+            color: _C.text,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'monospace',
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: _C.muted, size: 18),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: _C.muted,
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           if (!arts.isLoading)
             IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: _C.muted, size: 20),
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: _C.muted,
+                size: 20,
+              ),
               tooltip: 'Recargar',
               onPressed: creds == null
                   ? null
                   : () => arts.load(
-                        creds,
-                        context.read<WorkflowsProvider>().workflows,
-                      ),
+                      creds,
+                      context.read<WorkflowsProvider>().workflows,
+                    ),
             ),
         ],
       ),
@@ -2674,13 +3255,22 @@ class _ArtifactsScreenState extends State<ArtifactsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 24, height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2, color: _C.accent),
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: _C.accent,
+              ),
             ),
             SizedBox(height: 14),
-            Text('Cargando artefactos…',
-                style: TextStyle(
-                    color: _C.muted, fontSize: 13, fontFamily: 'monospace')),
+            Text(
+              'Cargando artefactos…',
+              style: TextStyle(
+                color: _C.muted,
+                fontSize: 13,
+                fontFamily: 'monospace',
+              ),
+            ),
           ],
         ),
       );
@@ -2692,12 +3282,17 @@ class _ArtifactsScreenState extends State<ArtifactsScreen> {
         title: 'Error al cargar',
         subtitle: arts.error ?? 'Error desconocido.',
         action: TextButton.icon(
-          onPressed: () => arts.load(
-              creds, context.read<WorkflowsProvider>().workflows),
+          onPressed: () =>
+              arts.load(creds, context.read<WorkflowsProvider>().workflows),
           icon: const Icon(Icons.refresh_rounded, size: 16, color: _C.accent),
-          label: const Text('Reintentar',
-              style: TextStyle(
-                  color: _C.accent, fontSize: 13, fontFamily: 'monospace')),
+          label: const Text(
+            'Reintentar',
+            style: TextStyle(
+              color: _C.accent,
+              fontSize: 13,
+              fontFamily: 'monospace',
+            ),
+          ),
         ),
       );
     }
@@ -2712,8 +3307,8 @@ class _ArtifactsScreenState extends State<ArtifactsScreen> {
     }
 
     final byWorkflow = arts.byWorkflow;
-    final owner  = accounts.activeCredentials!.owner;
-    final repo   = accounts.activeRepo!.repo;
+    final owner = accounts.activeCredentials!.owner;
+    final repo = accounts.activeRepo!.repo;
     final branch = accounts.activeCredentials!.branch;
 
     return ListView(
@@ -2729,15 +3324,20 @@ class _ArtifactsScreenState extends State<ArtifactsScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.inventory_2_outlined, color: _C.accent, size: 18),
+              const Icon(
+                Icons.inventory_2_outlined,
+                color: _C.accent,
+                size: 18,
+              ),
               const SizedBox(width: 10),
               Text(
                 '${arts.artifacts.length} artefacto${arts.artifacts.length != 1 ? 's' : ''} · ${byWorkflow.length} workflow${byWorkflow.length != 1 ? 's' : ''}',
                 style: const TextStyle(
-                    color: _C.accent,
-                    fontSize: 13,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.w600),
+                  color: _C.accent,
+                  fontSize: 13,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -2780,52 +3380,63 @@ class _ArtWorkflowSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _C.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6, height: 6,
-                    decoration: const BoxDecoration(
-                        color: _C.accent, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(workflowName,
-                        style: const TextStyle(
-                            color: _C.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'monospace')),
-                  ),
-                  Text(
-                    '${artifacts.length} archivo${artifacts.length != 1 ? 's' : ''}',
-                    style: const TextStyle(
-                        color: _C.textDim, fontSize: 11, fontFamily: 'monospace'),
-                  ),
-                ],
+    decoration: BoxDecoration(
+      color: _C.surface,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: _C.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          child: Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: _C.accent,
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
-            const Divider(color: _C.border, height: 1),
-            ...artifacts.asMap().entries.map((e) => _ArtifactTile(
-                  artifact: e.value,
-                  owner: owner,
-                  repo: repo,
-                  branch: branch,
-                  artsProvider: artsProvider,
-                  isLast: e.key == artifacts.length - 1,
-                )),
-          ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  workflowName,
+                  style: const TextStyle(
+                    color: _C.text,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              Text(
+                '${artifacts.length} archivo${artifacts.length != 1 ? 's' : ''}',
+                style: const TextStyle(
+                  color: _C.textDim,
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
         ),
-      );
+        const Divider(color: _C.border, height: 1),
+        ...artifacts.asMap().entries.map(
+          (e) => _ArtifactTile(
+            artifact: e.value,
+            owner: owner,
+            repo: repo,
+            branch: branch,
+            artsProvider: artsProvider,
+            isLast: e.key == artifacts.length - 1,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ArtifactTile extends StatelessWidget {
@@ -2847,9 +3458,9 @@ class _ArtifactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress    = artsProvider.downloadProgress(artifact.id);
+    final progress = artsProvider.downloadProgress(artifact.id);
     final downloading = artsProvider.isDownloading(artifact.id);
-    final done        = artsProvider.isDownloaded(artifact.id);
+    final done = artsProvider.isDownloaded(artifact.id);
 
     return Column(
       children: [
@@ -2858,13 +3469,17 @@ class _ArtifactTile extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 36, height: 36,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: _C.surfaceHi2,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.folder_zip_outlined,
-                    color: _C.muted, size: 18),
+                child: const Icon(
+                  Icons.folder_zip_outlined,
+                  color: _C.muted,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2874,44 +3489,56 @@ class _ArtifactTile extends StatelessWidget {
                     Text(
                       artifact.name,
                       style: const TextStyle(
-                          color: _C.text,
-                          fontSize: 13,
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.w500),
+                        color: _C.text,
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w500,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Text(_fmtSize(artifact.sizeInBytes),
-                            style: const TextStyle(
-                                color: _C.textDim,
-                                fontSize: 11,
-                                fontFamily: 'monospace')),
-                        const Text(' · ',
-                            style: TextStyle(
-                                color: _C.textDim, fontSize: 11)),
-                        Text(_fmtDate(artifact.createdAt),
-                            style: const TextStyle(
-                                color: _C.textDim,
-                                fontSize: 11,
-                                fontFamily: 'monospace')),
+                        Text(
+                          _fmtSize(artifact.sizeInBytes),
+                          style: const TextStyle(
+                            color: _C.textDim,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        const Text(
+                          ' · ',
+                          style: TextStyle(color: _C.textDim, fontSize: 11),
+                        ),
+                        Text(
+                          _fmtDate(artifact.createdAt),
+                          style: const TextStyle(
+                            color: _C.textDim,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
                           decoration: BoxDecoration(
                             color: _C.blue.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
-                                color: _C.blue.withValues(alpha: 0.3)),
+                              color: _C.blue.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Text(
                             'run #${artifact.runId}',
                             style: const TextStyle(
-                                color: _C.blue,
-                                fontSize: 9,
-                                fontFamily: 'monospace'),
+                              color: _C.blue,
+                              fontSize: 9,
+                              fontFamily: 'monospace',
+                            ),
                           ),
                         ),
                       ],
@@ -2928,9 +3555,10 @@ class _ArtifactTile extends StatelessWidget {
                       Text(
                         '${(progress * 100).toStringAsFixed(0)}%',
                         style: const TextStyle(
-                            color: _C.accent,
-                            fontSize: 10,
-                            fontFamily: 'monospace'),
+                          color: _C.accent,
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                        ),
                       ),
                     ],
                   ],
@@ -2940,44 +3568,55 @@ class _ArtifactTile extends StatelessWidget {
               // Botón descarga
               if (downloading)
                 const SizedBox(
-                  width: 36, height: 36,
+                  width: 36,
+                  height: 36,
                   child: Center(
                     child: SizedBox(
-                      width: 18, height: 18,
+                      width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: _C.accent),
+                        strokeWidth: 2,
+                        color: _C.accent,
+                      ),
                     ),
                   ),
                 )
               else if (done)
                 Container(
-                  width: 36, height: 36,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: _C.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.check_rounded,
-                      color: _C.accent, size: 18),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: _C.accent,
+                    size: 18,
+                  ),
                 )
               else
                 GestureDetector(
                   onTap: () => _download(context),
                   child: Container(
-                    width: 36, height: 36,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: _C.surfaceHi2,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: _C.border),
                     ),
-                    child: const Icon(Icons.download_rounded,
-                        color: _C.accent, size: 18),
+                    child: const Icon(
+                      Icons.download_rounded,
+                      color: _C.accent,
+                      size: 18,
+                    ),
                   ),
                 ),
             ],
           ),
         ),
-        if (!isLast)
-          const Divider(color: _C.border, height: 1, indent: 62),
+        if (!isLast) const Divider(color: _C.border, height: 1, indent: 62),
       ],
     );
   }
@@ -2996,8 +3635,9 @@ class _ArtifactTile extends StatelessWidget {
       },
       onError: (err) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(_buildSnack('Error: $err', isError: true));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(_buildSnack('Error: $err', isError: true));
       },
     );
   }
@@ -3033,32 +3673,38 @@ class _ArtCenteredMsg extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: _C.textDim, size: 42),
-              const SizedBox(height: 14),
-              Text(title,
-                  style: const TextStyle(
-                      color: _C.muted,
-                      fontSize: 15,
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              Text(subtitle,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: _C.textDim,
-                      fontSize: 12,
-                      fontFamily: 'monospace',
-                      height: 1.5)),
-              if (action != null) ...[const SizedBox(height: 20), action!],
-            ],
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: _C.textDim, size: 42),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: const TextStyle(
+              color: _C.muted,
+              fontSize: 15,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: _C.textDim,
+              fontSize: 12,
+              fontFamily: 'monospace',
+              height: 1.5,
+            ),
+          ),
+          if (action != null) ...[const SizedBox(height: 20), action!],
+        ],
+      ),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3069,44 +3715,42 @@ class _AppLogo extends StatelessWidget {
   const _AppLogo();
   @override
   Widget build(BuildContext context) => Row(
+    children: [
+      Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: _C.accentDim,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: _C.accent.withValues(alpha: 0.5), width: 1),
+        ),
+        child: const Icon(Icons.bolt_rounded, color: _C.accent, size: 20),
+      ),
+      const SizedBox(width: 10),
+      const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: _C.accentDim,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                  color: _C.accent.withValues(alpha: 0.5), width: 1),
+          Text(
+            'GHA Panel',
+            style: TextStyle(
+              color: _C.text,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'monospace',
             ),
-            child:
-                const Icon(Icons.bolt_rounded, color: _C.accent, size: 20),
           ),
-          const SizedBox(width: 10),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'GHA Panel',
-                style: TextStyle(
-                  color: _C.text,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'monospace',
-                ),
-              ),
-              Text(
-                'GitHub Actions Runner',
-                style: TextStyle(
-                  color: _C.muted,
-                  fontSize: 10,
-                  fontFamily: 'monospace',
-                ),
-              ),
-            ],
+          Text(
+            'GitHub Actions Runner',
+            style: TextStyle(
+              color: _C.muted,
+              fontSize: 10,
+              fontFamily: 'monospace',
+            ),
           ),
         ],
-      );
+      ),
+    ],
+  );
 }
 
 class _InputField extends StatelessWidget {
@@ -3126,19 +3770,19 @@ class _InputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextFormField(
-        controller: controller,
-        style: const TextStyle(
-          color: _C.text,
-          fontSize: 13,
-          fontFamily: 'monospace',
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          prefixIcon: Icon(icon, color: _C.muted, size: 18),
-        ),
-        validator: validator,
-      );
+    controller: controller,
+    style: const TextStyle(
+      color: _C.text,
+      fontSize: 13,
+      fontFamily: 'monospace',
+    ),
+    decoration: InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: _C.muted, size: 18),
+    ),
+    validator: validator,
+  );
 }
 
 class _Badge extends StatelessWidget {
@@ -3148,22 +3792,17 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: color.withValues(alpha: 0.4)),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 9,
-            fontFamily: 'monospace',
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(4),
+      border: Border.all(color: color.withValues(alpha: 0.4)),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(color: color, fontSize: 9, fontFamily: 'monospace'),
+    ),
+  );
 }
 
 class _ConfirmDeleteDialog extends StatelessWidget {
@@ -3174,51 +3813,55 @@ class _ConfirmDeleteDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        backgroundColor: _C.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: _C.border),
+    backgroundColor: _C.surface,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+      side: const BorderSide(color: _C.border),
+    ),
+    title: Text(
+      title,
+      style: const TextStyle(
+        color: _C.text,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        fontFamily: 'monospace',
+      ),
+    ),
+    content: Text(
+      body,
+      style: const TextStyle(
+        color: _C.muted,
+        fontSize: 13,
+        fontFamily: 'monospace',
+        height: 1.5,
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text(
+          'Cancelar',
+          style: TextStyle(color: _C.muted, fontSize: 13),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: _C.text,
-            fontSize: 15,
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, true),
+        style: FilledButton.styleFrom(
+          backgroundColor: _C.danger,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: const Text(
+          'Eliminar',
+          style: TextStyle(
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             fontFamily: 'monospace',
           ),
         ),
-        content: Text(
-          body,
-          style: const TextStyle(
-            color: _C.muted,
-            fontSize: 13,
-            fontFamily: 'monospace',
-            height: 1.5,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar',
-                style: TextStyle(color: _C.muted, fontSize: 13)),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: _C.danger,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Eliminar',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'monospace')),
-          ),
-        ],
-      );
+      ),
+    ],
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3226,12 +3869,13 @@ class _ConfirmDeleteDialog extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 SnackBar _buildSnack(String msg, {bool isError = false}) => SnackBar(
-      content: Text(msg,
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
-      backgroundColor: isError ? _C.danger : _C.accent,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.all(16),
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      duration: Duration(seconds: isError ? 5 : 3),
-    );
+  content: Text(
+    msg,
+    style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+  ),
+  backgroundColor: isError ? _C.danger : _C.accent,
+  behavior: SnackBarBehavior.floating,
+  margin: const EdgeInsets.all(16),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  duration: Duration(seconds: isError ? 5 : 3),
+);

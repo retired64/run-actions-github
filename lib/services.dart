@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGGER — solo en debug, nunca expone tokens
@@ -633,56 +634,101 @@ class GithubApiService {
   // ─── ARTEFACTOS ← NUEVO ────────────────────────────────────────────────────
 
   /// Obtiene artefactos de los últimos [maxRunsPerWorkflow] runs de cada workflow.
+  /// Usa semáforo para limitar a 4 peticiones concurrentes.
   Future<List<WorkflowArtifact>> getRecentArtifacts(
     GithubCredentials c,
     List<Workflow> workflows, {
     int maxRunsPerWorkflow = 3,
   }) async {
+    final semaphore = _Semaphore(4);
     final allArtifacts = <WorkflowArtifact>[];
 
-    for (final wf in workflows) {
-      final filename = wf.path.split('/').last;
+    await Future.wait(
+      workflows.map((wf) async {
+        final filename = wf.path.split('/').last;
+        await semaphore.acquire();
+        try {
+          final runsUri = Uri.parse(
+            '$_base/repos/${c.owner}/${c.repo}/actions/workflows/${wf.id}/runs'
+            '?per_page=$maxRunsPerWorkflow&branch=${Uri.encodeComponent(c.branch)}&status=completed',
+          );
+          final runsRes = await _get(runsUri, c.token);
+          _checkStatus(runsRes);
+          final runs = (jsonDecode(runsRes.body)['workflow_runs'] as List)
+              .cast<Map<String, dynamic>>();
 
-      // Últimos N runs completados de este workflow
-      final runsUri = Uri.parse(
-        '$_base/repos/${c.owner}/${c.repo}/actions/workflows/${wf.id}/runs'
-        '?per_page=$maxRunsPerWorkflow&branch=${Uri.encodeComponent(c.branch)}&status=completed',
-      );
-      final runsRes = await _get(runsUri, c.token);
-      _checkStatus(runsRes);
-      final runsBody = jsonDecode(runsRes.body) as Map<String, dynamic>;
-      final runs = (runsBody['workflow_runs'] as List<dynamic>)
-          .map((r) => r as Map<String, dynamic>)
-          .toList();
+          final batches = await Future.wait(
+            runs.map((run) async {
+              final runId = run['id'] as int;
+              await semaphore.acquire();
+              try {
+                final artUri = Uri.parse(
+                  '$_base/repos/${c.owner}/${c.repo}/actions/runs/$runId/artifacts?per_page=30',
+                );
+                final artRes = await _get(artUri, c.token);
+                _checkStatus(artRes);
+                return (jsonDecode(artRes.body)['artifacts'] as List)
+                    .map(
+                      (a) => WorkflowArtifact.fromJson(
+                        a as Map<String, dynamic>,
+                        workflowId: wf.id,
+                        workflowName: wf.name,
+                        workflowFilename: filename,
+                        runId: runId,
+                      ),
+                    )
+                    .where((a) => !a.expired)
+                    .toList();
+              } finally {
+                semaphore.release();
+              }
+            }),
+          );
 
-      // Artefactos de cada run
-      for (final run in runs) {
-        final runId = run['id'] as int;
-        final artUri = Uri.parse(
-          '$_base/repos/${c.owner}/${c.repo}/actions/runs/$runId/artifacts?per_page=30',
-        );
-        final artRes = await _get(artUri, c.token);
-        _checkStatus(artRes);
-        final artBody = jsonDecode(artRes.body) as Map<String, dynamic>;
-        final arts = (artBody['artifacts'] as List<dynamic>)
-            .map(
-              (a) => WorkflowArtifact.fromJson(
-                a as Map<String, dynamic>,
-                workflowId: wf.id,
-                workflowName: wf.name,
-                workflowFilename: filename,
-                runId: runId,
-              ),
-            )
-            .where((a) => !a.expired)
-            .toList();
-        allArtifacts.addAll(arts);
-      }
-    }
+          for (final batch in batches) {
+            allArtifacts.addAll(batch);
+          }
+        } finally {
+          semaphore.release();
+        }
+      }),
+    );
 
     allArtifacts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     Log.d(_tag, 'Artefactos encontrados: ${allArtifacts.length}');
     return allArtifacts;
+  }
+
+  /// Obtiene todos los repos del usuario autenticado (paginado).
+  Future<List<String>> getUserRepos(String token) async {
+    final all = <String>[];
+    int page = 1;
+    while (true) {
+      final uri = Uri.parse(
+        '$_base/user/repos?per_page=100&page=$page&sort=pushed&affiliation=owner,collaborator',
+      );
+      final res = await _get(uri, token);
+      _checkStatus(res);
+      final list = jsonDecode(res.body) as List;
+      if (list.isEmpty) break;
+      all.addAll(list.map((r) => r['full_name'] as String));
+      if (list.length < 100) break;
+      page++;
+    }
+    return all;
+  }
+
+  /// Obtiene los branches de un repo específico.
+  Future<List<String>> getRepoBranches(
+    String owner,
+    String repo,
+    String token,
+  ) async {
+    final uri = Uri.parse('$_base/repos/$owner/$repo/branches?per_page=100');
+    final res = await _get(uri, token);
+    _checkStatus(res);
+    final list = jsonDecode(res.body) as List;
+    return list.map((b) => b['name'] as String).toList();
   }
 }
 
@@ -723,7 +769,6 @@ class GithubRepository {
   }) => _api.dispatchWorkflow(c, id, inputs: inputs);
   Future<void> validateToken(String token) => _api.validateToken(token);
 
-  // ← NUEVO
   Future<List<WorkflowArtifact>> getRecentArtifacts(
     GithubCredentials c,
     List<Workflow> workflows, {
@@ -733,4 +778,126 @@ class GithubRepository {
     workflows,
     maxRunsPerWorkflow: maxRunsPerWorkflow,
   );
+
+  Future<List<String>> getUserRepos(String token) => _api.getUserRepos(token);
+
+  Future<List<String>> getRepoBranches(
+    String owner,
+    String repo,
+    String token,
+  ) => _api.getRepoBranches(owner, repo, token);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CACHE DE WORKFLOWS EN SHARED PREFERENCES
+// ─────────────────────────────────────────────────────────────────────────────
+
+class WorkflowCacheService {
+  static const _kWorkflows = 'gha_cache_workflows';
+  static const _kRuns = 'gha_cache_runs';
+  static const _kRepoId = 'gha_cache_repo_id';
+
+  static Future<void> save({
+    required String repoId,
+    required List<Workflow> workflows,
+    required Map<int, WorkflowRun> runs,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kRepoId, repoId);
+    await prefs.setString(
+      _kWorkflows,
+      jsonEncode(
+        workflows
+            .map(
+              (w) => {
+                'id': w.id,
+                'name': w.name,
+                'state': w.state,
+                'path': w.path,
+              },
+            )
+            .toList(),
+      ),
+    );
+    await prefs.setString(
+      _kRuns,
+      jsonEncode(
+        runs.map(
+          (id, run) => MapEntry(id.toString(), {
+            'id': run.id,
+            'workflowId': run.workflowId,
+            'status': run.status,
+            'conclusion': run.conclusion,
+            'name': run.name,
+            'createdAt': run.createdAt.toIso8601String(),
+            'updatedAt': run.updatedAt?.toIso8601String(),
+          }),
+        ),
+      ),
+    );
+  }
+
+  static Future<({List<Workflow> workflows, Map<int, WorkflowRun> runs})?> load(
+    String repoId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString(_kRepoId) != repoId) return null;
+
+    final rawW = prefs.getString(_kWorkflows);
+    final rawR = prefs.getString(_kRuns);
+    if (rawW == null || rawR == null) return null;
+
+    final workflows = (jsonDecode(rawW) as List)
+        .map(
+          (j) => Workflow(
+            id: j['id'] as int,
+            name: j['name'] as String,
+            state: j['state'] as String,
+            path: j['path'] as String,
+            inputs: [],
+          ),
+        )
+        .toList();
+
+    final runs = (jsonDecode(rawR) as Map<String, dynamic>).map(
+      (k, v) => MapEntry(int.parse(k), WorkflowRun.fromJson(v)),
+    );
+
+    return (workflows: workflows, runs: runs);
+  }
+
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kWorkflows);
+    await prefs.remove(_kRuns);
+    await prefs.remove(_kRepoId);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEMÁFORO SIMPLE PARA LIMITAR CONCURRENCIA DE FUTURES
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _Semaphore {
+  _Semaphore(int maxConcurrent) : _count = maxConcurrent;
+  int _count;
+  final _queue = <Completer<void>>[];
+
+  Future<void> acquire() async {
+    if (_count > 0) {
+      _count--;
+      return;
+    }
+    final c = Completer<void>();
+    _queue.add(c);
+    await c.future;
+  }
+
+  void release() {
+    if (_queue.isNotEmpty) {
+      _queue.removeAt(0).complete();
+    } else {
+      _count++;
+    }
+  }
 }
